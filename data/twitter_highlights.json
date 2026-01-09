@@ -1,0 +1,21 @@
+{
+  "recent": [
+    {
+      "handle": "@SemiAnalysis",
+      "content": "NVIDIA's datacenter revenue is now 5x what it was a year ago. The AI compute demand curve is steeper than anyone predicted.",
+      "reasoning": "Shows the unprecedented demand for AI compute - key for understanding NVDA thesis",
+      "stocks_mentioned": ["NVDA"],
+      "link": "https://twitter.com/SemiAnalysis/status/example",
+      "date": "2025-01-08"
+    },
+    {
+      "handle": "@borrowed_ideas",
+      "content": "The best businesses grow revenue without growing headcount proportionally. That's operating leverage. AI enables this like never before.",
+      "reasoning": "Framework for evaluating which companies will benefit most from AI adoption",
+      "stocks_mentioned": [],
+      "link": "https://twitter.com/borrowed_ideas/status/example",
+      "date": "2025-01-08"
+    }
+  ],
+  "instructions": "Add tweets here throughout the day. Include the reasoning for why they matter for AI investing."
+}

@@ -1,0 +1,245 @@
+# AI & Tech Investing Sources
+# =================================
+# Curated list of high-quality sources for learning AI/tech investing
+# Add or remove sources as you discover new ones
+
+twitter:
+  # Deep AI/Tech Analysis
+  - handle: "@chaaborsi"
+    focus: "AI infrastructure, semiconductors"
+    why_follow: "Deep technical analysis of AI compute trends"
+
+  - handle: "@borrowed_ideas"
+    focus: "Quality compounders, tech fundamentals"
+    why_follow: "Long-form threads on business models"
+
+  - handle: "@10kdiver"
+    focus: "Financial education, valuation"
+    why_follow: "Teaches how to think about investing fundamentals"
+
+  - handle: "@modabortech"
+    focus: "AI companies, earnings analysis"
+    why_follow: "Real-time earnings breakdowns"
+
+  - handle: "@safloyd91"
+    focus: "Semiconductors, AI infrastructure"
+    why_follow: "Supply chain and chip industry insights"
+
+  - handle: "@QCompounding"
+    focus: "Quality growth investing"
+    why_follow: "Framework-driven analysis"
+
+  - handle: "@fresaborni"
+    focus: "AI adoption curves"
+    why_follow: "Enterprise AI trends"
+
+  - handle: "@SemiAnalysis"
+    focus: "Semiconductors, AI compute"
+    why_follow: "Industry-leading technical analysis"
+
+  - handle: "@EricNewcomer"
+    focus: "AI startups, venture capital"
+    why_follow: "Breaking AI industry news"
+
+  - handle: "@mattshumer_"
+    focus: "AI applications, startups"
+    why_follow: "Builder perspective on AI"
+
+substacks:
+  - name: "SemiAnalysis"
+    url: "https://semianalysis.com"
+    rss: "https://semianalysis.com/feed"
+    focus: "Deep semiconductor and AI infrastructure analysis"
+    frequency: "2-3x/week"
+    must_read: true
+
+  - name: "Stratechery"
+    url: "https://stratechery.com"
+    rss: "https://stratechery.com/feed/"
+    focus: "Tech strategy, platform dynamics, AI business models"
+    frequency: "3-4x/week"
+    must_read: true
+
+  - name: "Not Boring"
+    url: "https://notboring.co"
+    rss: "https://notboring.co/feed"
+    focus: "Tech trends, company deep dives"
+    frequency: "1-2x/week"
+    must_read: true
+
+  - name: "The Generalist"
+    url: "https://generalist.com"
+    rss: "https://generalist.com/feed"
+    focus: "Company deep dives, tech trends"
+    frequency: "weekly"
+
+  - name: "Newcomer"
+    url: "https://newcomer.co"
+    rss: "https://newcomer.co/feed"
+    focus: "VC, AI startups, Silicon Valley"
+    frequency: "2-3x/week"
+
+  - name: "Tanay's Newsletter"
+    url: "https://tanay.substack.com"
+    rss: "https://tanay.substack.com/feed"
+    focus: "AI companies, software analysis"
+    frequency: "weekly"
+
+  - name: "Fabricated Knowledge"
+    url: "https://fabricatedknowledge.com"
+    rss: "https://fabricatedknowledge.com/feed"
+    focus: "Semiconductors deep dives"
+    frequency: "1-2x/week"
+    must_read: true
+
+  - name: "The Chip Letter"
+    url: "https://thechipletter.substack.com"
+    rss: "https://thechipletter.substack.com/feed"
+    focus: "Chip industry history and analysis"
+    frequency: "weekly"
+
+podcasts:
+  - name: "All-In Podcast"
+    feed: "https://feeds.megaphone.fm/all-in-with-chamath-jason-sacks-and-friedberg"
+    focus: "Tech investing, macro, AI trends"
+    hosts: "Chamath, Jason Calacanis, David Sacks, David Friedberg"
+    why_listen: "Real-time takes from successful tech investors"
+    key_segments:
+      - "Stock picks and reasoning"
+      - "AI industry updates"
+      - "Macro implications"
+
+  - name: "Acquired"
+    feed: "https://feeds.acquired.fm/acquired"
+    focus: "Company histories, business model breakdowns"
+    why_listen: "Deep understanding of how great tech companies were built"
+    best_for: "Learning frameworks for evaluating companies"
+
+  - name: "Invest Like the Best"
+    feed: "https://feeds.simplecast.com/JC0GMvxf"
+    focus: "Investor interviews, frameworks"
+    host: "Patrick O'Shaughnessy"
+    why_listen: "Learn how professional investors think"
+
+  - name: "BG2 Pod"
+    feed: "https://bg2pod.libsyn.com/rss"
+    focus: "Enterprise tech, AI"
+    hosts: "Bill Gurley, Brad Gerstner"
+    why_listen: "Two legendary tech investors discuss markets"
+
+  - name: "The AI Podcast"
+    feed: "https://feeds.soundcloud.com/users/soundcloud:users:264034133/sounds.rss"
+    focus: "AI technology deep dives"
+    host: "NVIDIA"
+    why_listen: "Technical context for AI investments"
+
+  - name: "Lex Fridman Podcast"
+    feed: "https://lexfridman.com/feed/podcast/"
+    focus: "AI researchers, tech leaders"
+    why_listen: "Deep technical context, understand where AI is heading"
+    filter_for: "AI-focused episodes"
+
+# Key stocks to track mentions of
+watchlist:
+  mega_cap:
+    - symbol: "NVDA"
+      name: "NVIDIA"
+      thesis: "AI compute infrastructure leader"
+    - symbol: "MSFT"
+      name: "Microsoft"
+      thesis: "Enterprise AI, OpenAI partnership, Azure"
+    - symbol: "GOOGL"
+      name: "Alphabet"
+      thesis: "AI research leader, search moat, cloud"
+    - symbol: "AMZN"
+      name: "Amazon"
+      thesis: "AWS AI services, logistics AI"
+    - symbol: "META"
+      name: "Meta"
+      thesis: "Open source AI, recommendation systems"
+    - symbol: "AAPL"
+      name: "Apple"
+      thesis: "On-device AI, ecosystem lock-in"
+
+  semiconductors:
+    - symbol: "AMD"
+      name: "AMD"
+      thesis: "AI GPU challenger, MI300"
+    - symbol: "AVGO"
+      name: "Broadcom"
+      thesis: "Custom AI chips, networking"
+    - symbol: "TSM"
+      name: "TSMC"
+      thesis: "AI chip manufacturing monopoly"
+    - symbol: "ASML"
+      name: "ASML"
+      thesis: "EUV lithography monopoly"
+    - symbol: "ARM"
+      name: "Arm Holdings"
+      thesis: "Chip architecture licensing"
+    - symbol: "MRVL"
+      name: "Marvell"
+      thesis: "Custom AI silicon, data center"
+
+  ai_software:
+    - symbol: "CRM"
+      name: "Salesforce"
+      thesis: "Enterprise AI agents"
+    - symbol: "NOW"
+      name: "ServiceNow"
+      thesis: "Enterprise AI workflows"
+    - symbol: "PLTR"
+      name: "Palantir"
+      thesis: "AI platform for enterprises/government"
+    - symbol: "SNOW"
+      name: "Snowflake"
+      thesis: "Data cloud, AI data infrastructure"
+    - symbol: "MDB"
+      name: "MongoDB"
+      thesis: "Vector database for AI"
+    - symbol: "DDOG"
+      name: "Datadog"
+      thesis: "Observability for AI infrastructure"
+
+  ai_pure_plays:
+    - symbol: "SMCI"
+      name: "Super Micro Computer"
+      thesis: "AI server infrastructure"
+    - symbol: "VRT"
+      name: "Vertiv"
+      thesis: "Data center power/cooling"
+    - symbol: "DELL"
+      name: "Dell"
+      thesis: "AI server sales"
+    - symbol: "PATH"
+      name: "UiPath"
+      thesis: "AI automation"
+
+# Educational frameworks to apply
+learning_frameworks:
+  valuation:
+    - "P/E vs growth rate (PEG ratio)"
+    - "EV/Revenue for growth companies"
+    - "Free cash flow yield"
+    - "Rule of 40 for SaaS"
+
+  competitive_moats:
+    - "Network effects"
+    - "Switching costs"
+    - "Economies of scale"
+    - "Intangible assets (brand, IP)"
+    - "Cost advantages"
+
+  ai_specific:
+    - "Data moats - proprietary training data"
+    - "Compute access and cost"
+    - "Distribution advantages"
+    - "Model capabilities vs commoditization"
+    - "Inference cost economics"
+
+  questions_to_ask:
+    - "What is the company's right to win in AI?"
+    - "Is this a pick-and-shovel play or direct AI bet?"
+    - "How defensible is the AI advantage?"
+    - "What's priced in at current valuation?"
+    - "What could go wrong? (steelman the bear case)"

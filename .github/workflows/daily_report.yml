@@ -1,0 +1,49 @@
+name: Daily AI Investing Report
+
+on:
+  schedule:
+    # Run at 7 AM EST (12:00 UTC) every weekday
+    - cron: '0 12 * * 1-5'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Generate daily report
+        run: |
+          python -m src.report_generator
+
+      - name: Commit and push report
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add data/reports/
+          git diff --staged --quiet || git commit -m "📊 Daily AI investing report - $(date +%Y-%m-%d)"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Optional: Send notification (uncomment and configure)
+      # - name: Send Slack notification
+      #   uses: slackapi/slack-github-action@v1
+      #   with:
+      #     payload: |
+      #       {
+      #         "text": "🌅 Your daily AI investing report is ready!"
+      #       }
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}

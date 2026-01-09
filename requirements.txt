@@ -1,0 +1,16 @@
+# AI Investing Tracker Dependencies
+
+# RSS/Atom feed parsing
+feedparser>=6.0.0
+
+# Configuration
+PyYAML>=6.0
+
+# Optional: Stock price fetching
+yfinance>=0.2.0
+
+# Optional: Better terminal output
+rich>=13.0.0
+
+# For future Claude integration
+anthropic>=0.18.0
