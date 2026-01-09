@@ -448,6 +448,261 @@ watchlist:
       name: "IBM"
       thesis: "WatsonX, enterprise AI, hybrid cloud"
 
+  # =====================
+  # 2026 THEMES - AI INFRA/COMPUTE
+  # Bitcoin miners pivoting to AI, GPU cloud
+  # =====================
+  ai_compute_infra:
+    - symbol: "IREN"
+      name: "Iris Energy"
+      thesis: "Power/compute expansion, MSFT deal; 3x potential play"
+      theme: "AI infrastructure buildout"
+    - symbol: "NBIS"
+      name: "Nebius Group"
+      thesis: "GPU cloud, hyperscaler deals to $7-9B ARR; picks & shovels"
+      theme: "AI infrastructure buildout"
+    - symbol: "CIFR"
+      name: "Cipher Mining"
+      thesis: "AWS 15yr deal, 3.4GW pipeline; power arbitrage"
+      theme: "AI infrastructure buildout"
+    - symbol: "WULF"
+      name: "TeraWulf"
+      thesis: "Hyperscaler acquisitions, low-cost power"
+      theme: "AI infrastructure buildout"
+    - symbol: "CRWV"
+      name: "CoreWeave"
+      thesis: "GPU cloud for AI training, NVDA partnership"
+      theme: "AI infrastructure buildout"
+
+  # =====================
+  # 2026 THEMES - POWER/ENERGY/NUCLEAR
+  # No power = No AI. Multi-year constraint play
+  # =====================
+  power_nuclear:
+    - symbol: "OKLO"
+      name: "Oklo"
+      thesis: "Nuclear microreactors for datacenters; breakout year"
+      theme: "Power for AI"
+    - symbol: "SMR"
+      name: "NuScale Power"
+      thesis: "Small modular reactors, utility partnerships"
+      theme: "Power for AI"
+    - symbol: "LEU"
+      name: "Centrus Energy"
+      thesis: "Uranium enrichment, HALEU for advanced reactors"
+      theme: "Power for AI"
+    - symbol: "UUUU"
+      name: "Energy Fuels"
+      thesis: "Uranium mining, rare earths; nuclear supply chain"
+      theme: "Power for AI"
+    - symbol: "GEV"
+      name: "GE Vernova"
+      thesis: "Grid equipment, gas turbines for AI power demand"
+      theme: "Power for AI"
+    - symbol: "EOSE"
+      name: "Eos Energy"
+      thesis: "Grid-scale battery storage, zinc-based tech"
+      theme: "Power for AI"
+
+  # =====================
+  # 2026 THEMES - CONNECTIVITY/NETWORKING
+  # The backbone connecting AI clusters
+  # =====================
+  ai_networking:
+    - symbol: "ALAB"
+      name: "Astera Labs"
+      thesis: "Interconnect backbone, 100%+ growth; PCIe/CXL leader"
+      theme: "AI connectivity"
+    - symbol: "CRDO"
+      name: "Credo Technology"
+      thesis: "High-speed connectivity, active cables for AI"
+      theme: "AI connectivity"
+    - symbol: "LITE"
+      name: "Lumentum"
+      thesis: "Optical components for datacenter interconnect"
+      theme: "AI connectivity"
+    - symbol: "CIEN"
+      name: "Ciena"
+      thesis: "Optical networking, coherent tech for AI traffic"
+      theme: "AI connectivity"
+
+  # =====================
+  # 2026 THEMES - AGENTIC AI/APPLIED SOFTWARE
+  # From training to inference/agents; ROI phase
+  # =====================
+  agentic_ai:
+    - symbol: "ZETA"
+      name: "Zeta Global"
+      thesis: "MarTech AI, customer intelligence platform; 'Mr. ZETA' fave"
+      theme: "Agentic AI"
+    - symbol: "RXRX"
+      name: "Recursion Pharmaceuticals"
+      thesis: "AI drug discovery, NVDA partnership; biotech AI"
+      theme: "Agentic AI"
+
+  # =====================
+  # 2026 THEMES - ROBOTICS/AUTONOMY
+  # Physical AI - edge, embodied, real-world
+  # =====================
+  robotics_autonomy:
+    - symbol: "TSLA"
+      name: "Tesla"
+      thesis: "Robotaxis, Optimus robot; physical AI breakout, 418 Fib watch"
+      theme: "Physical AI"
+    - symbol: "SYM"
+      name: "Symbotic"
+      thesis: "Warehouse AI robotics, automation systems"
+      theme: "Physical AI"
+    - symbol: "ISRG"
+      name: "Intuitive Surgical"
+      thesis: "Surgical robotics leader, da Vinci platform"
+      theme: "Physical AI"
+    - symbol: "SERV"
+      name: "Serve Robotics"
+      thesis: "Sidewalk delivery robots, last-mile autonomy"
+      theme: "Physical AI"
+
+  # =====================
+  # 2026 THEMES - DRONES/DEFENSE
+  # Warfare tech, counter-UAS, autonomy
+  # =====================
+  drones_defense:
+    - symbol: "ONDS"
+      name: "Ondas Holdings"
+      thesis: "Drones/counter-UAS, warfare essential"
+      theme: "Defense AI"
+    - symbol: "AVAV"
+      name: "AeroVironment"
+      thesis: "Military drones, loitering munitions (Switchblade)"
+      theme: "Defense AI"
+    - symbol: "KTOS"
+      name: "Kratos Defense"
+      thesis: "Drone swarms, target drones, hypersonics"
+      theme: "Defense AI"
+    - symbol: "UMAC"
+      name: "Unusual Machines"
+      thesis: "Consumer/prosumer drones, FPV market"
+      theme: "Defense AI"
+    - symbol: "DPRO"
+      name: "Draganfly"
+      thesis: "Commercial drones, public safety applications"
+      theme: "Defense AI"
+
+  # =====================
+  # 2026 THEMES - SPACE ECONOMY
+  # Satellites, launch, space infrastructure
+  # =====================
+  space_economy:
+    - symbol: "RKLB"
+      name: "Rocket Lab"
+      thesis: "Launch/infra, Neutron rocket; 66 Fib level watch"
+      theme: "Space AI"
+    - symbol: "ASTS"
+      name: "AST SpaceMobile"
+      thesis: "Sat-to-phone direct connectivity; carrier billions"
+      theme: "Space AI"
+    - symbol: "PL"
+      name: "Planet Labs"
+      thesis: "Earth observation satellites, AI imagery analytics"
+      theme: "Space AI"
+    - symbol: "BKSY"
+      name: "BlackSky Technology"
+      thesis: "Real-time satellite imagery, defense/intel"
+      theme: "Space AI"
+    - symbol: "RDW"
+      name: "Redwire"
+      thesis: "Space infrastructure, in-space manufacturing"
+      theme: "Space AI"
+
+  # =====================
+  # 2026 THEMES - CYBERSECURITY
+  # AI-powered threat detection
+  # =====================
+  cybersecurity:
+    - symbol: "RBRK"
+      name: "Rubrik"
+      thesis: "Data security, ransomware recovery; attention incoming"
+      theme: "Cyber AI"
+
+  # =====================
+  # 2026 THEMES - FINTECH/HEALTH/LAGGARDS
+  # Modernization plays, AI-enabled disruption
+  # =====================
+  fintech_health:
+    - symbol: "HOOD"
+      name: "Robinhood"
+      thesis: "Retail trading OS, prediction markets, crypto"
+      theme: "Fintech AI"
+    - symbol: "SOFI"
+      name: "SoFi Technologies"
+      thesis: "Digital banking modernization, AI lending"
+      theme: "Fintech AI"
+    - symbol: "OSCR"
+      name: "Oscar Health"
+      thesis: "AI care-routing, health insurance disruptor"
+      theme: "Health AI"
+    - symbol: "LMND"
+      name: "Lemonade"
+      thesis: "AI-first insurance, claims automation"
+      theme: "Fintech AI"
+    - symbol: "HIMS"
+      name: "Hims & Hers"
+      thesis: "Telehealth, AI personalization, GLP-1 plays"
+      theme: "Health AI"
+    - symbol: "NVO"
+      name: "Novo Nordisk"
+      thesis: "GLP-1 leader (Ozempic/Wegovy), health AI integration"
+      theme: "Health AI"
+
+  # =====================
+  # 2026 THEMES - QUANTUM
+  # Speculative, bearish short-term but watching
+  # =====================
+  quantum_computing:
+    - symbol: "IONQ"
+      name: "IonQ"
+      thesis: "Trapped ion quantum; overpriced short-term but long potential"
+      theme: "Quantum"
+      risk: "Speculative, bearish near-term"
+    - symbol: "RGTI"
+      name: "Rigetti Computing"
+      thesis: "Superconducting quantum; narrative-driven valuation"
+      theme: "Quantum"
+      risk: "Speculative, bearish near-term"
+    - symbol: "QBTS"
+      name: "D-Wave Quantum"
+      thesis: "Quantum annealing; commercial applications focus"
+      theme: "Quantum"
+      risk: "Speculative, bearish near-term"
+
+# =====================
+# 2026 INVESTMENT THEMES (Reference)
+# =====================
+themes_2026:
+  ai_infrastructure:
+    description: "Hyperscalers capex $500-600B, 75% AI-dedicated"
+    risk: "Overbuild if ROI doesn't materialize by late 2026"
+    key_constraint: "Power/grid bottleneck"
+
+  power_energy:
+    description: "AI's energy hunger - datacenters straining grids"
+    catalyst: "Nuclear revival for baseload power"
+    duration: "Multi-year play"
+
+  physical_ai:
+    description: "Edge/embodied AI - robots, drones, AVs"
+    shift: "From digital-only to real-world hardware integration"
+
+  agentic_ai:
+    description: "From training to inference/agents"
+    focus: "Enterprise workflows, ROI scrutiny favors data moats"
+
+  risk_factors:
+    - "Volatility from overvalued AI (quantum especially)"
+    - "Regulatory hurdles"
+    - "Recession fears"
+    - "Capex slowdowns if ROI lags by late 2026"
+
 # Educational frameworks to apply
 learning_frameworks:
   valuation:
