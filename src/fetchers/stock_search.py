@@ -52,33 +52,165 @@ def get_ticker_set() -> set[str]:
     return {s['symbol'].upper() for s in get_all_tickers()}
 
 
-def extract_tickers_from_text(text: str, ticker_set: set[str]) -> list[str]:
+def build_stock_patterns() -> dict[str, list[str]]:
     """
-    Find which tickers from our watchlist are mentioned in text.
-    Looks for $TICKER or standalone TICKER patterns.
+    Build comprehensive patterns for each stock including:
+    - Ticker ($NVDA, NVDA)
+    - Company name (Nvidia, NVIDIA)
+    - Common variations/misspellings
+    """
+    stocks = get_all_tickers()
+    patterns = {}
+
+    # Manual additions for tricky names
+    name_variations = {
+        'NVDA': ['nvidia', 'nvda', 'jensen', 'geforce', 'cuda'],
+        'AMD': ['amd', 'advanced micro', 'lisa su', 'ryzen', 'epyc', 'mi300', 'mi400'],
+        'INTC': ['intel', 'intc', 'pat gelsinger', 'gaudi'],
+        'TSM': ['tsmc', 'taiwan semi', 'taiwan semiconductor'],
+        'ASML': ['asml', 'euv', 'lithography'],
+        'AVGO': ['broadcom', 'avgo', 'hock tan'],
+        'MU': ['micron', 'hbm', 'high bandwidth memory'],
+        'MSFT': ['microsoft', 'msft', 'satya', 'azure', 'copilot'],
+        'GOOGL': ['google', 'alphabet', 'deepmind', 'gemini', 'sundar'],
+        'AMZN': ['amazon', 'aws', 'bedrock', 'trainium', 'inferentia'],
+        'META': ['meta', 'facebook', 'zuckerberg', 'llama'],
+        'AAPL': ['apple', 'aapl', 'tim cook', 'iphone'],
+        'PLTR': ['palantir', 'pltr', 'alex karp', 'aip'],
+        'SMCI': ['supermicro', 'super micro', 'smci'],
+        'VRT': ['vertiv', 'vrt', 'cooling'],
+        'ANET': ['arista', 'anet'],
+        'MRVL': ['marvell', 'mrvl'],
+        'ARM': ['arm', 'arm holdings', 'softbank'],
+        'CRWD': ['crowdstrike', 'crwd'],
+        'PANW': ['palo alto', 'panw'],
+        'SNOW': ['snowflake', 'snow'],
+        'CRM': ['salesforce', 'crm', 'agentforce'],
+        'NOW': ['servicenow', 'now'],
+        'ORCL': ['oracle', 'orcl', 'larry ellison'],
+        'DELL': ['dell', 'dell technologies'],
+        'HPE': ['hpe', 'hewlett packard'],
+        'QCOM': ['qualcomm', 'qcom', 'snapdragon'],
+        'LRCX': ['lam research', 'lrcx', 'lam'],
+        'AMAT': ['applied materials', 'amat'],
+        'KLAC': ['kla', 'klac'],
+        'OKLO': ['oklo', 'nuclear', 'sam altman oklo'],
+        'SMR': ['nuscale', 'smr', 'small modular'],
+        'VST': ['vistra', 'vst'],
+        'CEG': ['constellation', 'ceg', 'constellation energy'],
+        'TSLA': ['tesla', 'tsla', 'elon', 'optimus', 'robotaxi', 'fsd'],
+        'RKLB': ['rocket lab', 'rklb', 'neutron'],
+        'ASTS': ['ast spacemobile', 'asts', 'sat to phone'],
+        'IONQ': ['ionq', 'quantum', 'trapped ion'],
+        'RGTI': ['rigetti', 'rgti'],
+        'ALAB': ['astera', 'alab', 'astera labs'],
+        'CRDO': ['credo', 'crdo'],
+        'IREN': ['iris energy', 'iren'],
+        'WULF': ['terawulf', 'wulf'],
+        'CIFR': ['cipher', 'cifr', 'cipher mining'],
+        'NBIS': ['nebius', 'nbis'],
+        'CRWV': ['coreweave', 'crwv'],
+        'GEV': ['ge vernova', 'gev', 'vernova'],
+        'ISRG': ['intuitive', 'isrg', 'da vinci', 'davinci'],
+        'SYM': ['symbotic', 'sym'],
+        'PATH': ['uipath', 'path'],
+        'DDOG': ['datadog', 'ddog'],
+        'NET': ['cloudflare', 'net'],
+        'ZS': ['zscaler', 'zs'],
+        'MDB': ['mongodb', 'mdb', 'mongo'],
+        'HOOD': ['robinhood', 'hood'],
+        'SOFI': ['sofi', 'sofi technologies'],
+    }
+
+    for stock in stocks:
+        ticker = stock['symbol'].upper()
+        name = stock.get('name', '').lower()
+
+        # Start with ticker patterns
+        stock_patterns = [ticker.lower(), f"${ticker.lower()}"]
+
+        # Add company name (split into words for partial matching)
+        if name:
+            stock_patterns.append(name)
+            # Also add without common suffixes
+            for suffix in [' inc', ' corp', ' ltd', ' holdings', ' technologies', ' semiconductor']:
+                if name.endswith(suffix):
+                    stock_patterns.append(name.replace(suffix, '').strip())
+
+        # Add manual variations
+        if ticker in name_variations:
+            stock_patterns.extend(name_variations[ticker])
+
+        patterns[ticker] = list(set(stock_patterns))
+
+    return patterns
+
+
+# AI/Semi keywords that make content relevant even without specific stock mentions
+RELEVANCE_KEYWORDS = [
+    # Hardware/Chips
+    'gpu', 'gpus', 'chip', 'chips', 'semiconductor', 'semis', 'silicon',
+    'hbm', 'memory', 'dram', 'nand', 'cowos', 'packaging', 'foundry',
+    'asic', 'asics', 'fpga', 'accelerator', 'tpu', 'inference', 'training',
+    # AI/ML
+    'ai ', ' ai', 'artificial intelligence', 'machine learning', 'llm', 'llms',
+    'gpt', 'transformer', 'neural', 'deep learning', 'model', 'models',
+    'agentic', 'agent', 'agents', 'rag', 'fine-tun', 'embeddings',
+    # Supply/Demand
+    'supply', 'demand', 'shortage', 'glut', 'capacity', 'backlog', 'lead time',
+    'capex', 'spending', 'buildout', 'datacenter', 'data center', 'hyperscaler',
+    # Investment
+    'stock', 'stocks', 'invest', 'bull', 'bear', 'long', 'short', 'buy', 'sell',
+    'undervalued', 'overvalued', 'valuation', 'earnings', 'revenue', 'margin',
+    'interesting', 'opportunity', 'thesis', 'position', 'accumulate',
+    # Power/Infra
+    'power', 'energy', 'nuclear', 'grid', 'cooling', 'electricity',
+    # Specific tech
+    'blackwell', 'hopper', 'grace', 'mi300', 'mi400', 'gaudi',
+    'inference', 'training', 'scaling', 'compute', 'flops',
+]
+
+
+def extract_tickers_from_text(text: str, stock_patterns: dict[str, list[str]]) -> list[str]:
+    """
+    Find which stocks from our watchlist are mentioned in text.
+    Matches tickers, company names, and variations.
     """
     if not text:
         return []
 
-    text_upper = f" {text.upper()} "
+    text_lower = f" {text.lower()} "
     found = []
 
-    for ticker in ticker_set:
-        # Check for $TICKER or space-bounded TICKER
-        patterns = [
-            f"${ticker}",
-            f" {ticker} ",
-            f" {ticker}.",
-            f" {ticker},",
-            f" {ticker}:",
-            f" {ticker}!",
-            f" {ticker}?",
-            f"({ticker})",
-        ]
-        if any(p in text_upper for p in patterns):
-            found.append(ticker)
+    for ticker, patterns in stock_patterns.items():
+        for pattern in patterns:
+            # Check for pattern with word boundaries
+            search_patterns = [
+                f" {pattern} ",
+                f" {pattern}.",
+                f" {pattern},",
+                f" {pattern}:",
+                f" {pattern}!",
+                f" {pattern}?",
+                f" {pattern}'",
+                f"({pattern})",
+                f"${pattern}",  # Cashtag
+            ]
+            if any(p in text_lower for p in search_patterns):
+                found.append(ticker)
+                break  # Found this ticker, move to next
 
     return found
+
+
+def is_relevant_content(text: str) -> bool:
+    """Check if content is relevant to AI/semi investing even without ticker mentions."""
+    if not text:
+        return False
+
+    text_lower = text.lower()
+    matches = sum(1 for kw in RELEVANCE_KEYWORDS if kw in text_lower)
+    return matches >= 2  # Require at least 2 keyword matches
 
 
 def classify_sentiment(text: str) -> str:
@@ -258,25 +390,36 @@ def fetch_all_substack_content(days_back: int = 3) -> list[dict]:
 
 def scan_content_for_tickers(
     content_list: list[dict],
-    ticker_set: set[str],
+    stock_patterns: dict[str, list[str]],
     content_key: str = 'content'
-) -> dict[str, list[dict]]:
+) -> tuple[dict[str, list[dict]], list[dict]]:
     """
-    Scan all content for ticker mentions.
-    Returns dict mapping ticker -> list of mentions.
+    Scan all content for stock mentions using comprehensive patterns.
+    Returns:
+        - dict mapping ticker -> list of mentions
+        - list of relevant content without specific ticker mentions
     """
-    mentions_by_ticker = {ticker: [] for ticker in ticker_set}
+    mentions_by_ticker = {ticker: [] for ticker in stock_patterns.keys()}
+    relevant_general = []  # Content relevant to AI/semis but no specific ticker
 
     for item in content_list:
         text = item.get(content_key, '') + ' ' + item.get('title', '')
-        found_tickers = extract_tickers_from_text(text, ticker_set)
+        found_tickers = extract_tickers_from_text(text, stock_patterns)
 
-        for ticker in found_tickers:
-            mention = item.copy()
-            mention['sentiment'] = classify_sentiment(text)
-            mentions_by_ticker[ticker].append(mention)
+        if found_tickers:
+            for ticker in found_tickers:
+                mention = item.copy()
+                mention['sentiment'] = classify_sentiment(text)
+                mention['matched_tickers'] = found_tickers
+                mentions_by_ticker[ticker].append(mention)
+        elif is_relevant_content(text):
+            # No specific ticker but relevant to AI/semis
+            item_copy = item.copy()
+            item_copy['sentiment'] = classify_sentiment(text)
+            item_copy['relevance'] = 'general_ai_semi'
+            relevant_general.append(item_copy)
 
-    return mentions_by_ticker
+    return mentions_by_ticker, relevant_general
 
 
 def get_stock_prices_batch(tickers: list[str]) -> dict[str, dict]:
@@ -337,36 +480,43 @@ def find_active_stocks(
     max_stocks: int = 20,
     include_prices: bool = True,
     include_google_news: bool = False,  # Disabled by default for speed
-) -> list[dict]:
+) -> tuple[list[dict], list[dict]]:
     """
     Find stocks with Twitter/social activity - OPTIMIZED VERSION.
 
     Key optimization: Fetches all feeds ONCE, then scans for all tickers.
-    Previous version: O(n_stocks * n_feeds) HTTP requests
-    This version: O(n_feeds) HTTP requests
+    Now uses comprehensive matching: tickers, company names, keywords.
+
+    Returns:
+        - List of active stocks with mentions
+        - List of general relevant content (AI/semi discussion without specific tickers)
     """
     start_time = time.time()
 
-    # Get all tickers
+    # Get all tickers and build comprehensive patterns
     all_stocks = get_all_tickers()
-    ticker_set = {s['symbol'].upper() for s in all_stocks}
     ticker_to_info = {s['symbol'].upper(): s for s in all_stocks}
+    stock_patterns = build_stock_patterns()
 
-    print(f"Scanning {len(ticker_set)} tickers for social activity...")
+    print(f"Scanning {len(stock_patterns)} stocks with comprehensive pattern matching...")
+    print(f"  (matching tickers, company names, CEO names, product names...)")
 
     # Fetch all content ONCE (the key optimization)
     twitter_content = fetch_all_twitter_content(days_back)
     substack_content = fetch_all_substack_content(days_back)
 
-    # Scan for ticker mentions
-    print("  Scanning content for ticker mentions...")
-    twitter_mentions = scan_content_for_tickers(twitter_content, ticker_set)
-    substack_mentions = scan_content_for_tickers(substack_content, ticker_set, 'content')
+    # Scan for ticker mentions using comprehensive patterns
+    print("  Scanning content for stock mentions...")
+    twitter_mentions, twitter_general = scan_content_for_tickers(twitter_content, stock_patterns)
+    substack_mentions, substack_general = scan_content_for_tickers(substack_content, stock_patterns, 'content')
+
+    # Combine general relevant content
+    general_relevant = twitter_general + substack_general
 
     # Build results for stocks with mentions
     active_stocks = []
 
-    for ticker in ticker_set:
+    for ticker in stock_patterns.keys():
         twitter_hits = twitter_mentions.get(ticker, [])
         substack_hits = substack_mentions.get(ticker, [])
 
@@ -401,9 +551,9 @@ def find_active_stocks(
             stock['price_info'] = prices.get(stock['ticker'])
 
     elapsed = time.time() - start_time
-    print(f"  Done! Found {len(active_stocks)} active stocks in {elapsed:.1f}s")
+    print(f"  Done! Found {len(active_stocks)} active stocks + {len(general_relevant)} general takes in {elapsed:.1f}s")
 
-    return active_stocks
+    return active_stocks, general_relevant
 
 
 def search_all_sources_for_ticker(
@@ -416,10 +566,10 @@ def search_all_sources_for_ticker(
     Search for a single ticker (for compatibility).
     Note: For bulk searches, use find_active_stocks() instead.
     """
-    ticker_set = {ticker.upper()}
+    stock_patterns = {ticker.upper(): [ticker.lower(), company_name.lower()]}
 
     twitter_content = fetch_all_twitter_content(days_back)
-    twitter_mentions = scan_content_for_tickers(twitter_content, ticker_set)
+    twitter_mentions, _ = scan_content_for_tickers(twitter_content, stock_patterns)
 
     mentions = twitter_mentions.get(ticker.upper(), [])
 

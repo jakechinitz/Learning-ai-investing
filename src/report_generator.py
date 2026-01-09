@@ -383,6 +383,30 @@ def format_quick_movers(active_stocks: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def format_general_takes(general_content: list[dict], max_items: int = 8) -> str:
+    """Format general AI/semi content that didn't match specific tickers."""
+    if not general_content:
+        return ""
+
+    lines = ["## General AI/Semi Discussion\n"]
+    lines.append("*Relevant takes without specific stock mentions:*\n")
+
+    for item in general_content[:max_items]:
+        handle = item.get('handle', item.get('source', 'Unknown'))
+        content = item.get('content', item.get('title', ''))[:250]
+        sentiment = item.get('sentiment', 'neutral')
+        link = item.get('link', '')
+
+        emoji = "🟢" if sentiment == 'bullish' else "🔴" if sentiment == 'bearish' else "⚪"
+
+        lines.append(f"{emoji} **{handle}**: \"{content}\"")
+        if link:
+            lines.append(f"   [View]({link})")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 def generate_daily_report(
     days_back: int = 1,  # 24 hours
     max_stocks: int = 15,
@@ -398,8 +422,8 @@ def generate_daily_report(
 
     print("Scanning for Twitter activity on your watchlist...")
 
-    # Find stocks with activity
-    active_stocks = find_active_stocks(
+    # Find stocks with activity (now returns tuple)
+    active_stocks, general_content = find_active_stocks(
         days_back=days_back,
         min_mentions=1,
         max_stocks=max_stocks,
@@ -409,12 +433,13 @@ def generate_daily_report(
     total_stocks = len(get_all_tickers())
     active_count = len(active_stocks)
     total_takes = sum(len(s.get('twitter_mentions', [])) for s in active_stocks)
+    general_count = len(general_content)
 
     # Build report
     report_lines = [
         f"# AI Investing Brief",
         f"**{weekday}, {today}**\n",
-        f"*{active_count} stocks with activity | {total_takes} Twitter takes found*",
+        f"*{active_count} stocks mentioned | {total_takes} stock-specific takes | {general_count} general AI/semi takes*",
         "",
         "---\n",
     ]
@@ -438,7 +463,12 @@ def generate_daily_report(
 
     else:
         report_lines.append("## Quiet Day\n")
-        report_lines.append("*No significant Twitter activity on your watchlist stocks today.*\n")
+        report_lines.append("*No stock-specific mentions found today.*\n")
+        report_lines.append("---\n")
+
+    # General AI/semi discussion (relevant content without specific stock mentions)
+    if general_content:
+        report_lines.append(format_general_takes(general_content))
         report_lines.append("---\n")
 
     # Substack summaries - show what's been published
