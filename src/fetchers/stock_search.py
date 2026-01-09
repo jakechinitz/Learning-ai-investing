@@ -1,15 +1,19 @@
 """
-Stock-Centric Social Search
-Searches across multiple sources for mentions of specific stock tickers
-More like Grok - finds what people are saying about each stock
+Twitter-First Stock Social Search (v2 - Optimized)
+
+Key optimizations over v1:
+- Fetches each RSS feed ONCE, then scans for all tickers (was: per-ticker fetching)
+- Uses concurrent.futures for parallel fetching
+- Twitter-first: Shows actual takes/content, not just mentions
+
+To rollback: cp src/fetchers/stock_search_v1_backup.py src/fetchers/stock_search.py
 """
 
 import feedparser
-import requests
 from datetime import datetime, timedelta
 from typing import Optional
 from pathlib import Path
-from urllib.parse import quote_plus
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import yaml
 import re
 import time
@@ -20,17 +24,17 @@ except ImportError:
     yf = None
 
 
-def load_watchlist() -> dict:
-    """Load all stocks from watchlist configuration."""
+def load_config() -> dict:
+    """Load sources configuration."""
     config_path = Path(__file__).parent.parent.parent / "config" / "sources.yaml"
     with open(config_path) as f:
-        config = yaml.safe_load(f)
-    return config.get('watchlist', {})
+        return yaml.safe_load(f)
 
 
 def get_all_tickers() -> list[dict]:
     """Get flat list of all tickers with their info."""
-    watchlist = load_watchlist()
+    config = load_config()
+    watchlist = config.get('watchlist', {})
     all_stocks = []
 
     for category, stocks in watchlist.items():
@@ -43,251 +47,386 @@ def get_all_tickers() -> list[dict]:
     return all_stocks
 
 
-def search_google_news(ticker: str, company_name: str, days_back: int = 1) -> list[dict]:
-    """
-    Search Google News RSS for ticker/company mentions.
-    Returns list of news articles.
-    """
-    results = []
+def get_ticker_set() -> set[str]:
+    """Get set of all ticker symbols for fast lookup."""
+    return {s['symbol'].upper() for s in get_all_tickers()}
 
-    # Search both ticker and company name
-    queries = [
-        f"{ticker} stock",
-        f"{company_name} stock",
+
+def extract_tickers_from_text(text: str, ticker_set: set[str]) -> list[str]:
+    """
+    Find which tickers from our watchlist are mentioned in text.
+    Looks for $TICKER or standalone TICKER patterns.
+    """
+    if not text:
+        return []
+
+    text_upper = f" {text.upper()} "
+    found = []
+
+    for ticker in ticker_set:
+        # Check for $TICKER or space-bounded TICKER
+        patterns = [
+            f"${ticker}",
+            f" {ticker} ",
+            f" {ticker}.",
+            f" {ticker},",
+            f" {ticker}:",
+            f" {ticker}!",
+            f" {ticker}?",
+            f"({ticker})",
+        ]
+        if any(p in text_upper for p in patterns):
+            found.append(ticker)
+
+    return found
+
+
+def classify_sentiment(text: str) -> str:
+    """
+    Basic sentiment classification from text.
+    Returns: 'bullish', 'bearish', or 'neutral'
+    """
+    text_lower = text.lower()
+
+    bullish_words = [
+        'bull', 'long', 'buy', 'bullish', 'moon', 'rip', 'breakout',
+        'accumulate', 'undervalued', 'upside', 'beat', 'crush', 'strong',
+        'growth', 'opportunity', 'love', 'adding', 'bought', 'buying',
     ]
 
-    for query in queries:
-        try:
-            url = f"https://news.google.com/rss/search?q={quote_plus(query)}&hl=en-US&gl=US&ceid=US:en"
-            feed = feedparser.parse(url)
+    bearish_words = [
+        'bear', 'short', 'sell', 'bearish', 'dump', 'overvalued',
+        'downside', 'miss', 'weak', 'concern', 'worried', 'sold',
+        'selling', 'puts', 'crash', 'avoid', 'stay away', 'red flag',
+    ]
 
-            cutoff = datetime.now() - timedelta(days=days_back)
+    bull_count = sum(1 for w in bullish_words if w in text_lower)
+    bear_count = sum(1 for w in bearish_words if w in text_lower)
 
-            for entry in feed.entries[:5]:  # Limit per query
-                published = None
-                if hasattr(entry, 'published_parsed') and entry.published_parsed:
-                    published = datetime(*entry.published_parsed[:6])
-
-                if published and published < cutoff:
-                    continue
-
-                # Check if ticker or company is actually mentioned
-                title = entry.get('title', '').upper()
-                if ticker.upper() not in title and company_name.upper() not in title.upper():
-                    continue
-
-                result = {
-                    'source': 'Google News',
-                    'title': entry.get('title', ''),
-                    'link': entry.get('link', ''),
-                    'published': published.isoformat() if published else None,
-                    'summary': entry.get('summary', '')[:300],
-                    'ticker': ticker,
-                }
-                results.append(result)
-
-        except Exception as e:
-            print(f"Error searching Google News for {ticker}: {e}")
-
-    # Deduplicate by title
-    seen_titles = set()
-    unique_results = []
-    for r in results:
-        title_key = r['title'].lower()[:50]
-        if title_key not in seen_titles:
-            seen_titles.add(title_key)
-            unique_results.append(r)
-
-    return unique_results
+    if bull_count > bear_count:
+        return 'bullish'
+    elif bear_count > bull_count:
+        return 'bearish'
+    return 'neutral'
 
 
-def search_substack_for_ticker(ticker: str, days_back: int = 3) -> list[dict]:
+def fetch_nitter_feed(handle: str, nitter_instances: list[str] = None) -> list[dict]:
     """
-    Search Substack RSS feeds for ticker mentions.
-    """
-    config_path = Path(__file__).parent.parent.parent / "config" / "sources.yaml"
-    with open(config_path) as f:
-        config = yaml.safe_load(f)
-
-    substacks = config.get('substacks', [])
-    results = []
-    cutoff = datetime.now() - timedelta(days=days_back)
-
-    for sub in substacks:
-        rss_url = sub.get('rss')
-        if not rss_url:
-            continue
-
-        try:
-            feed = feedparser.parse(rss_url)
-
-            for entry in feed.entries[:10]:
-                # Check if ticker is mentioned
-                title = entry.get('title', '').upper()
-                content = entry.get('summary', '').upper()
-
-                if ticker.upper() not in title and ticker.upper() not in content:
-                    continue
-
-                published = None
-                if hasattr(entry, 'published_parsed') and entry.published_parsed:
-                    published = datetime(*entry.published_parsed[:6])
-
-                if published and published < cutoff:
-                    continue
-
-                result = {
-                    'source': sub.get('name', 'Substack'),
-                    'title': entry.get('title', ''),
-                    'link': entry.get('link', ''),
-                    'published': published.isoformat() if published else None,
-                    'summary': entry.get('summary', '')[:500],
-                    'ticker': ticker,
-                    'must_read': sub.get('must_read', False),
-                }
-                results.append(result)
-
-        except Exception as e:
-            print(f"Error searching {sub.get('name')} for {ticker}: {e}")
-
-    return results
-
-
-def search_nitter_for_ticker(
-    ticker: str,
-    days_back: int = 1,
-    nitter_instances: list[str] = None
-) -> list[dict]:
-    """
-    Search Nitter (Twitter mirror) for ticker mentions.
-    Searches configured Twitter accounts for mentions.
+    Fetch tweets from a single Twitter handle via Nitter.
+    Returns list of tweets with full content.
     """
     if nitter_instances is None:
         nitter_instances = [
             "nitter.privacydev.net",
             "nitter.poast.org",
+            "nitter.cz",
         ]
 
-    config_path = Path(__file__).parent.parent.parent / "config" / "sources.yaml"
-    with open(config_path) as f:
-        config = yaml.safe_load(f)
+    clean_handle = handle.replace("@", "")
 
-    twitter_accounts = config.get('twitter', [])
-    results = []
-    cutoff = datetime.now() - timedelta(days=days_back)
+    for instance in nitter_instances:
+        try:
+            rss_url = f"https://{instance}/{clean_handle}/rss"
+            feed = feedparser.parse(rss_url, request_headers={'User-Agent': 'Mozilla/5.0'})
 
-    for account in twitter_accounts:
-        handle = account.get('handle', '').replace('@', '')
-        if not handle:
-            continue
+            if not feed.entries:
+                continue
 
-        for instance in nitter_instances:
-            try:
-                rss_url = f"https://{instance}/{handle}/rss"
-                feed = feedparser.parse(rss_url, timeout=10)
+            tweets = []
+            for entry in feed.entries[:30]:  # Get more tweets per account
+                published = None
+                if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                    published = datetime(*entry.published_parsed[:6])
 
-                if not feed.entries:
-                    continue
+                tweet = {
+                    'handle': f"@{clean_handle}",
+                    'content': entry.get('title', ''),
+                    'link': entry.get('link', ''),
+                    'published': published,
+                    'source_type': 'twitter',
+                }
+                tweets.append(tweet)
 
-                for entry in feed.entries[:20]:
-                    content = entry.get('title', '').upper()
+            return tweets
 
-                    # Check for ticker mention (with $ or standalone)
-                    ticker_patterns = [
-                        f"${ticker.upper()}",
-                        f" {ticker.upper()} ",
-                        f" {ticker.upper()}.",
-                        f" {ticker.upper()},",
-                    ]
+        except Exception as e:
+            continue  # Try next instance
 
-                    if not any(p in f" {content} " for p in ticker_patterns):
-                        continue
-
-                    published = None
-                    if hasattr(entry, 'published_parsed') and entry.published_parsed:
-                        published = datetime(*entry.published_parsed[:6])
-
-                    if published and published < cutoff:
-                        continue
-
-                    result = {
-                        'source': f"@{handle}",
-                        'title': entry.get('title', '')[:280],
-                        'link': entry.get('link', ''),
-                        'published': published.isoformat() if published else None,
-                        'ticker': ticker,
-                        'focus': account.get('focus', ''),
-                    }
-                    results.append(result)
-
-                break  # Successful fetch, don't try other instances
-
-            except Exception as e:
-                continue  # Try next instance
-
-    return results
+    return []
 
 
-def get_stock_price_info(ticker: str) -> Optional[dict]:
-    """Get current price info using yfinance."""
-    if yf is None:
-        return None
+def fetch_substack_feed(substack: dict) -> list[dict]:
+    """Fetch articles from a single Substack."""
+    rss_url = substack.get('rss')
+    if not rss_url:
+        return []
 
     try:
-        stock = yf.Ticker(ticker)
-        info = stock.info
+        feed = feedparser.parse(rss_url)
+        articles = []
 
-        # Get recent price action
-        hist = stock.history(period="5d")
+        for entry in feed.entries[:10]:
+            published = None
+            if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                published = datetime(*entry.published_parsed[:6])
 
-        if hist.empty:
-            return None
+            article = {
+                'source': substack.get('name', 'Substack'),
+                'title': entry.get('title', ''),
+                'content': entry.get('summary', ''),
+                'link': entry.get('link', ''),
+                'published': published,
+                'source_type': 'substack',
+                'must_read': substack.get('must_read', False),
+            }
+            articles.append(article)
 
-        current = hist['Close'].iloc[-1]
-        prev = hist['Close'].iloc[-2] if len(hist) > 1 else current
-        change_pct = ((current - prev) / prev) * 100
+        return articles
 
-        # 5 day performance
-        five_day_start = hist['Close'].iloc[0]
-        five_day_change = ((current - five_day_start) / five_day_start) * 100
-
-        return {
-            'price': round(current, 2),
-            'change_1d': round(change_pct, 2),
-            'change_5d': round(five_day_change, 2),
-            'market_cap': info.get('marketCap'),
-            'pe_ratio': info.get('forwardPE'),
-            '52w_high': info.get('fiftyTwoWeekHigh'),
-            '52w_low': info.get('fiftyTwoWeekLow'),
-        }
     except Exception as e:
-        print(f"Error fetching price for {ticker}: {e}")
-        return None
+        print(f"Error fetching {substack.get('name')}: {e}")
+        return []
+
+
+def fetch_all_twitter_content(days_back: int = 2) -> list[dict]:
+    """
+    Fetch all Twitter content from configured accounts in PARALLEL.
+    Returns all tweets, ready to be scanned for tickers.
+    """
+    config = load_config()
+    twitter_accounts = config.get('twitter', [])
+    all_tweets = []
+    cutoff = datetime.now() - timedelta(days=days_back)
+
+    print(f"  Fetching {len(twitter_accounts)} Twitter accounts in parallel...")
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_handle = {
+            executor.submit(fetch_nitter_feed, acc.get('handle', '')): acc
+            for acc in twitter_accounts
+        }
+
+        for future in as_completed(future_to_handle):
+            account = future_to_handle[future]
+            try:
+                tweets = future.result()
+                # Add account metadata and filter by date
+                for tweet in tweets:
+                    if tweet['published'] and tweet['published'] < cutoff:
+                        continue
+                    tweet['focus'] = account.get('focus', '')
+                    tweet['why_follow'] = account.get('why_follow', '')
+                    all_tweets.append(tweet)
+            except Exception as e:
+                print(f"  Error fetching {account.get('handle')}: {e}")
+
+    print(f"  Got {len(all_tweets)} tweets from {len(twitter_accounts)} accounts")
+    return all_tweets
+
+
+def fetch_all_substack_content(days_back: int = 3) -> list[dict]:
+    """
+    Fetch all Substack content in PARALLEL.
+    Returns all articles, ready to be scanned for tickers.
+    """
+    config = load_config()
+    substacks = config.get('substacks', [])
+    all_articles = []
+    cutoff = datetime.now() - timedelta(days=days_back)
+
+    print(f"  Fetching {len(substacks)} Substacks in parallel...")
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_sub = {
+            executor.submit(fetch_substack_feed, sub): sub
+            for sub in substacks
+        }
+
+        for future in as_completed(future_to_sub):
+            try:
+                articles = future.result()
+                for article in articles:
+                    if article['published'] and article['published'] < cutoff:
+                        continue
+                    all_articles.append(article)
+            except Exception as e:
+                pass
+
+    print(f"  Got {len(all_articles)} articles from {len(substacks)} Substacks")
+    return all_articles
+
+
+def scan_content_for_tickers(
+    content_list: list[dict],
+    ticker_set: set[str],
+    content_key: str = 'content'
+) -> dict[str, list[dict]]:
+    """
+    Scan all content for ticker mentions.
+    Returns dict mapping ticker -> list of mentions.
+    """
+    mentions_by_ticker = {ticker: [] for ticker in ticker_set}
+
+    for item in content_list:
+        text = item.get(content_key, '') + ' ' + item.get('title', '')
+        found_tickers = extract_tickers_from_text(text, ticker_set)
+
+        for ticker in found_tickers:
+            mention = item.copy()
+            mention['sentiment'] = classify_sentiment(text)
+            mentions_by_ticker[ticker].append(mention)
+
+    return mentions_by_ticker
+
+
+def get_stock_prices_batch(tickers: list[str]) -> dict[str, dict]:
+    """
+    Fetch prices for multiple tickers efficiently.
+    """
+    if yf is None:
+        return {}
+
+    prices = {}
+    print(f"  Fetching prices for {len(tickers)} active stocks...")
+
+    try:
+        # yfinance can handle multiple tickers at once
+        data = yf.download(
+            tickers,
+            period="5d",
+            group_by='ticker',
+            progress=False,
+            threads=True
+        )
+
+        for ticker in tickers:
+            try:
+                if len(tickers) == 1:
+                    hist = data
+                else:
+                    hist = data[ticker] if ticker in data.columns.get_level_values(0) else None
+
+                if hist is None or hist.empty:
+                    continue
+
+                close = hist['Close'].dropna()
+                if len(close) < 2:
+                    continue
+
+                current = close.iloc[-1]
+                prev = close.iloc[-2]
+                first = close.iloc[0]
+
+                prices[ticker] = {
+                    'price': round(float(current), 2),
+                    'change_1d': round(((current - prev) / prev) * 100, 2),
+                    'change_5d': round(((current - first) / first) * 100, 2),
+                }
+            except Exception:
+                continue
+
+    except Exception as e:
+        print(f"  Price fetch error: {e}")
+
+    return prices
+
+
+def find_active_stocks(
+    days_back: int = 2,
+    min_mentions: int = 1,
+    max_stocks: int = 20,
+    include_prices: bool = True,
+    include_google_news: bool = False,  # Disabled by default for speed
+) -> list[dict]:
+    """
+    Find stocks with Twitter/social activity - OPTIMIZED VERSION.
+
+    Key optimization: Fetches all feeds ONCE, then scans for all tickers.
+    Previous version: O(n_stocks * n_feeds) HTTP requests
+    This version: O(n_feeds) HTTP requests
+    """
+    start_time = time.time()
+
+    # Get all tickers
+    all_stocks = get_all_tickers()
+    ticker_set = {s['symbol'].upper() for s in all_stocks}
+    ticker_to_info = {s['symbol'].upper(): s for s in all_stocks}
+
+    print(f"Scanning {len(ticker_set)} tickers for social activity...")
+
+    # Fetch all content ONCE (the key optimization)
+    twitter_content = fetch_all_twitter_content(days_back)
+    substack_content = fetch_all_substack_content(days_back)
+
+    # Scan for ticker mentions
+    print("  Scanning content for ticker mentions...")
+    twitter_mentions = scan_content_for_tickers(twitter_content, ticker_set)
+    substack_mentions = scan_content_for_tickers(substack_content, ticker_set, 'content')
+
+    # Build results for stocks with mentions
+    active_stocks = []
+
+    for ticker in ticker_set:
+        twitter_hits = twitter_mentions.get(ticker, [])
+        substack_hits = substack_mentions.get(ticker, [])
+
+        total_mentions = len(twitter_hits) + len(substack_hits)
+        if total_mentions < min_mentions:
+            continue
+
+        stock_info = ticker_to_info.get(ticker, {})
+
+        result = {
+            'ticker': ticker,
+            'company_name': stock_info.get('name', ticker),
+            'thesis': stock_info.get('thesis', ''),
+            'category': stock_info.get('category', ''),
+            'theme': stock_info.get('theme', ''),
+            'twitter_mentions': twitter_hits,
+            'substack_mentions': substack_hits,
+            'mention_count': total_mentions,
+            'twitter_count': len(twitter_hits),
+        }
+        active_stocks.append(result)
+
+    # Sort by Twitter mentions first (user priority), then total
+    active_stocks.sort(key=lambda x: (x['twitter_count'], x['mention_count']), reverse=True)
+    active_stocks = active_stocks[:max_stocks]
+
+    # Fetch prices only for active stocks
+    if include_prices and active_stocks:
+        active_tickers = [s['ticker'] for s in active_stocks]
+        prices = get_stock_prices_batch(active_tickers)
+        for stock in active_stocks:
+            stock['price_info'] = prices.get(stock['ticker'])
+
+    elapsed = time.time() - start_time
+    print(f"  Done! Found {len(active_stocks)} active stocks in {elapsed:.1f}s")
+
+    return active_stocks
 
 
 def search_all_sources_for_ticker(
     ticker: str,
     company_name: str,
-    days_back: int = 1,
+    days_back: int = 2,
     include_price: bool = True
 ) -> dict:
     """
-    Comprehensive search for a single ticker across all sources.
+    Search for a single ticker (for compatibility).
+    Note: For bulk searches, use find_active_stocks() instead.
     """
-    mentions = []
+    ticker_set = {ticker.upper()}
 
-    # Search each source
-    google_results = search_google_news(ticker, company_name, days_back)
-    mentions.extend(google_results)
+    twitter_content = fetch_all_twitter_content(days_back)
+    twitter_mentions = scan_content_for_tickers(twitter_content, ticker_set)
 
-    substack_results = search_substack_for_ticker(ticker, days_back + 2)  # Wider window for Substacks
-    mentions.extend(substack_results)
+    mentions = twitter_mentions.get(ticker.upper(), [])
 
-    twitter_results = search_nitter_for_ticker(ticker, days_back)
-    mentions.extend(twitter_results)
-
-    # Get price info
-    price_info = get_stock_price_info(ticker) if include_price else None
+    price_info = None
+    if include_price:
+        prices = get_stock_prices_batch([ticker])
+        price_info = prices.get(ticker)
 
     return {
         'ticker': ticker,
@@ -295,103 +434,52 @@ def search_all_sources_for_ticker(
         'mentions': mentions,
         'mention_count': len(mentions),
         'price_info': price_info,
-        'sources_found': list(set(m['source'] for m in mentions)),
     }
 
 
-def find_active_stocks(
-    days_back: int = 1,
-    min_mentions: int = 1,
-    max_stocks: int = 20,
-    include_prices: bool = True
-) -> list[dict]:
-    """
-    Find the most active stocks from the watchlist.
-    Returns stocks sorted by activity (number of mentions).
-    """
-    all_stocks = get_all_tickers()
-    active_stocks = []
-
-    print(f"Searching {len(all_stocks)} stocks for activity...")
-
-    for i, stock in enumerate(all_stocks):
-        ticker = stock['symbol']
-        name = stock['name']
-
-        if i > 0 and i % 20 == 0:
-            print(f"  Processed {i}/{len(all_stocks)} stocks...")
-            time.sleep(1)  # Rate limiting
-
-        result = search_all_sources_for_ticker(
-            ticker,
-            name,
-            days_back,
-            include_price=include_prices
-        )
-
-        result['thesis'] = stock.get('thesis', '')
-        result['category'] = stock.get('category', '')
-        result['theme'] = stock.get('theme', '')
-
-        if result['mention_count'] >= min_mentions:
-            active_stocks.append(result)
-
-    # Sort by activity
-    active_stocks.sort(key=lambda x: x['mention_count'], reverse=True)
-
-    return active_stocks[:max_stocks]
-
-
 def generate_stock_summary(stock_data: dict) -> str:
-    """
-    Generate a text summary for a single stock's activity.
-    """
+    """Generate text summary for a stock's Twitter activity."""
     ticker = stock_data['ticker']
     name = stock_data['company_name']
-    mentions = stock_data['mentions']
+    twitter_mentions = stock_data.get('twitter_mentions', [])
     price = stock_data.get('price_info', {})
 
     lines = []
 
     # Price header
     if price:
-        change_emoji = "+" if price.get('change_1d', 0) >= 0 else ""
-        lines.append(f"**{ticker}** ({name}) - ${price.get('price', 'N/A')} ({change_emoji}{price.get('change_1d', 0)}%)")
-        if price.get('change_5d'):
-            five_day_emoji = "+" if price['change_5d'] >= 0 else ""
-            lines.append(f"  5-day: {five_day_emoji}{price['change_5d']}%")
+        change = price.get('change_1d', 0)
+        sign = "+" if change >= 0 else ""
+        lines.append(f"**{ticker}** ({name}) - ${price.get('price', 'N/A')} ({sign}{change}%)")
     else:
         lines.append(f"**{ticker}** ({name})")
 
     lines.append(f"  Thesis: {stock_data.get('thesis', 'N/A')}")
-    lines.append(f"  Mentions: {len(mentions)} across {len(stock_data.get('sources_found', []))} sources")
-    lines.append("")
 
-    # Top mentions
-    if mentions:
-        lines.append("  **What people are saying:**")
-        for m in mentions[:5]:
-            source = m['source']
-            title = m['title'][:150]
-            link = m.get('link', '')
-            lines.append(f"  - [{source}] {title}")
-            if link:
-                lines.append(f"    {link}")
+    if twitter_mentions:
+        # Count sentiment
+        bullish = sum(1 for m in twitter_mentions if m.get('sentiment') == 'bullish')
+        bearish = sum(1 for m in twitter_mentions if m.get('sentiment') == 'bearish')
+
+        lines.append(f"  Twitter: {len(twitter_mentions)} takes ({bullish} bullish, {bearish} bearish)")
         lines.append("")
+        lines.append("  **Key takes:**")
+
+        for m in twitter_mentions[:4]:
+            handle = m.get('handle', 'Unknown')
+            content = m.get('content', '')[:200]
+            sentiment = m.get('sentiment', 'neutral')
+            emoji = "🟢" if sentiment == 'bullish' else "🔴" if sentiment == 'bearish' else "⚪"
+            lines.append(f"  {emoji} {handle}: \"{content}\"")
 
     return "\n".join(lines)
 
 
 if __name__ == "__main__":
-    print("Testing stock search...\n")
+    print("Testing optimized stock search...\n")
+    active = find_active_stocks(days_back=2, max_stocks=10)
 
-    # Test single stock
-    result = search_all_sources_for_ticker("NVDA", "NVIDIA", days_back=2)
-    print(f"NVDA mentions: {result['mention_count']}")
-    print(f"Sources: {result['sources_found']}")
-
-    if result['price_info']:
-        print(f"Price: ${result['price_info']['price']}")
-
-    for m in result['mentions'][:3]:
-        print(f"  - [{m['source']}] {m['title'][:80]}...")
+    for stock in active[:5]:
+        print(f"\n{stock['ticker']} - {stock['mention_count']} mentions")
+        for m in stock.get('twitter_mentions', [])[:2]:
+            print(f"  @{m['handle']}: {m['content'][:100]}...")

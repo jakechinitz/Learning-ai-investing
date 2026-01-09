@@ -1,6 +1,8 @@
 """
-Stock-Centric Daily AI Investing Report
-Searches across social media and news for what people are saying about your stocks
+Twitter-First Daily AI Investing Report (v2)
+Shows actual Twitter takes and sentiment for your watchlist stocks
+
+To rollback: cp src/report_generator_v1_backup.py src/report_generator.py
 """
 
 import yaml
@@ -47,11 +49,37 @@ def format_price_badge(price_info: dict) -> str:
     return f"{emoji} ${price:.2f} ({sign}{change:.1f}%)"
 
 
+def format_twitter_take(mention: dict, include_link: bool = True) -> str:
+    """Format a single Twitter take with sentiment indicator."""
+    handle = mention.get('handle', 'Unknown')
+    content = mention.get('content', '')
+    sentiment = mention.get('sentiment', 'neutral')
+    link = mention.get('link', '')
+
+    # Sentiment emoji
+    if sentiment == 'bullish':
+        emoji = "🟢"
+    elif sentiment == 'bearish':
+        emoji = "🔴"
+    else:
+        emoji = "⚪"
+
+    # Clean up content - remove extra whitespace, limit length
+    content = ' '.join(content.split())[:280]
+
+    line = f"{emoji} **{handle}**: \"{content}\""
+    if include_link and link:
+        line += f"\n   [View]({link})"
+
+    return line
+
+
 def format_stock_section(stock_data: dict) -> str:
-    """Format a single stock's activity section."""
+    """Format a single stock's Twitter activity."""
     ticker = stock_data['ticker']
     name = stock_data['company_name']
-    mentions = stock_data.get('mentions', [])
+    twitter_mentions = stock_data.get('twitter_mentions', [])
+    substack_mentions = stock_data.get('substack_mentions', [])
     price_info = stock_data.get('price_info')
     thesis = stock_data.get('thesis', '')
 
@@ -61,7 +89,7 @@ def format_stock_section(stock_data: dict) -> str:
     price_badge = format_price_badge(price_info)
     lines.append(f"### {ticker} - {name} {price_badge}")
 
-    # 5-day context if available
+    # 5-day context
     if price_info and price_info.get('change_5d'):
         five_day = price_info['change_5d']
         sign = "+" if five_day >= 0 else ""
@@ -69,168 +97,257 @@ def format_stock_section(stock_data: dict) -> str:
 
     lines.append("")
 
-    # Investment thesis reminder
+    # Thesis reminder
     if thesis:
-        lines.append(f"**Thesis:** {thesis}")
+        lines.append(f"**Your thesis:** {thesis}")
         lines.append("")
 
-    # What people are saying
-    if mentions:
-        lines.append(f"**{len(mentions)} mentions found:**")
+    # Twitter takes - the main focus
+    if twitter_mentions:
+        # Sentiment summary
+        bullish = sum(1 for m in twitter_mentions if m.get('sentiment') == 'bullish')
+        bearish = sum(1 for m in twitter_mentions if m.get('sentiment') == 'bearish')
+        neutral = len(twitter_mentions) - bullish - bearish
+
+        sentiment_summary = []
+        if bullish:
+            sentiment_summary.append(f"{bullish} bullish")
+        if bearish:
+            sentiment_summary.append(f"{bearish} bearish")
+        if neutral:
+            sentiment_summary.append(f"{neutral} neutral")
+
+        lines.append(f"**Twitter** ({', '.join(sentiment_summary)}):")
         lines.append("")
 
-        for m in mentions[:6]:  # Show top 6
-            source = m['source']
-            title = m.get('title', '')[:200]
+        # Show actual takes
+        for m in twitter_mentions[:5]:  # Top 5 takes
+            lines.append(format_twitter_take(m, include_link=True))
+            lines.append("")
+
+    # Substack mentions (secondary)
+    if substack_mentions:
+        lines.append(f"**Substack** ({len(substack_mentions)} mentions):")
+        for m in substack_mentions[:2]:
+            source = m.get('source', 'Substack')
+            title = m.get('title', '')[:100]
             link = m.get('link', '')
+            lines.append(f"- [{source}] [{title}]({link})")
+        lines.append("")
 
-            if link:
-                lines.append(f"- **[{source}]** [{title}]({link})")
-            else:
-                lines.append(f"- **[{source}]** {title}")
+    return "\n".join(lines)
 
+
+def format_sentiment_overview(active_stocks: list[dict]) -> str:
+    """Create a quick sentiment overview across all stocks."""
+    lines = ["## Sentiment Overview\n"]
+
+    most_bullish = []
+    most_bearish = []
+    most_discussed = []
+
+    for stock in active_stocks:
+        twitter = stock.get('twitter_mentions', [])
+        if not twitter:
+            continue
+
+        bullish = sum(1 for m in twitter if m.get('sentiment') == 'bullish')
+        bearish = sum(1 for m in twitter if m.get('sentiment') == 'bearish')
+        total = len(twitter)
+
+        if total >= 2:
+            bull_ratio = bullish / total
+            bear_ratio = bearish / total
+
+            if bull_ratio >= 0.6:
+                most_bullish.append((stock['ticker'], bullish, total))
+            if bear_ratio >= 0.6:
+                most_bearish.append((stock['ticker'], bearish, total))
+
+        most_discussed.append((stock['ticker'], total, stock['company_name']))
+
+    # Most discussed
+    most_discussed.sort(key=lambda x: x[1], reverse=True)
+    if most_discussed:
+        lines.append("**Most Discussed:**")
+        for ticker, count, name in most_discussed[:5]:
+            lines.append(f"- {ticker} ({name}): {count} takes")
+        lines.append("")
+
+    # Bullish sentiment
+    if most_bullish:
+        lines.append("**Bullish Sentiment:**")
+        for ticker, bullish, total in most_bullish[:5]:
+            lines.append(f"- {ticker}: {bullish}/{total} bullish")
+        lines.append("")
+
+    # Bearish sentiment
+    if most_bearish:
+        lines.append("**Bearish Sentiment:**")
+        for ticker, bearish, total in most_bearish[:5]:
+            lines.append(f"- {ticker}: {bearish}/{total} bearish")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def generate_dynamic_questions(active_stocks: list[dict]) -> str:
+    """
+    Generate questions specifically based on today's discussions.
+    These should provoke real thinking about the takes seen.
+    """
+    lines = ["## Think About This\n"]
+
+    if not active_stocks:
+        lines.append("*No major discussions today. Good day to do your own research.*")
+        return "\n".join(lines)
+
+    questions = []
+
+    # Find stocks with conflicting sentiment
+    for stock in active_stocks:
+        twitter = stock.get('twitter_mentions', [])
+        if len(twitter) < 2:
+            continue
+
+        bullish = [m for m in twitter if m.get('sentiment') == 'bullish']
+        bearish = [m for m in twitter if m.get('sentiment') == 'bearish']
+
+        if bullish and bearish:
+            bull_take = bullish[0].get('content', '')[:100]
+            bear_take = bearish[0].get('content', '')[:100]
+            questions.append(
+                f"**{stock['ticker']} Debate:** Bulls say \"{bull_take}...\" "
+                f"Bears say \"{bear_take}...\" Who's right and why?"
+            )
+
+    # Find the most discussed stock
+    if active_stocks:
+        top = active_stocks[0]
+        twitter = top.get('twitter_mentions', [])
+        if twitter:
+            sample_take = twitter[0].get('content', '')[:150]
+            questions.append(
+                f"**{top['ticker']} is trending.** One take: \"{sample_take}\" "
+                f"What's missing from this analysis? What would change your mind?"
+            )
+
+    # Find any stock with strong bullish sentiment - question the thesis
+    for stock in active_stocks[:5]:
+        twitter = stock.get('twitter_mentions', [])
+        bullish = sum(1 for m in twitter if m.get('sentiment') == 'bullish')
+        if len(twitter) >= 2 and bullish / len(twitter) >= 0.7:
+            questions.append(
+                f"**Consensus check:** {stock['ticker']} has {bullish}/{len(twitter)} bullish takes. "
+                f"When everyone agrees, what are they missing? What's the bear case?"
+            )
+            break
+
+    # Find any bearish stock - is it an opportunity?
+    for stock in active_stocks[:5]:
+        twitter = stock.get('twitter_mentions', [])
+        bearish = sum(1 for m in twitter if m.get('sentiment') == 'bearish')
+        if len(twitter) >= 2 and bearish / len(twitter) >= 0.6:
+            questions.append(
+                f"**Contrarian check:** {stock['ticker']} has {bearish}/{len(twitter)} bearish takes. "
+                f"Is the crowd right, or is this capitulation/opportunity?"
+            )
+            break
+
+    # Price vs sentiment disconnect
+    for stock in active_stocks[:5]:
+        price = stock.get('price_info', {})
+        twitter = stock.get('twitter_mentions', [])
+        if not price or not twitter:
+            continue
+
+        change = price.get('change_1d', 0)
+        bullish = sum(1 for m in twitter if m.get('sentiment') == 'bullish')
+
+        # Stock up but bearish sentiment, or down but bullish
+        if change >= 2 and bullish < len(twitter) / 2:
+            questions.append(
+                f"**Disconnect:** {stock['ticker']} is up {change:.1f}% but sentiment is cautious. "
+                f"Is the market wrong or are the tweeters wrong?"
+            )
+            break
+        elif change <= -2 and bullish > len(twitter) / 2:
+            questions.append(
+                f"**Disconnect:** {stock['ticker']} is down {change:.1f}% but bulls are buying. "
+                f"Catching a falling knife or smart accumulation?"
+            )
+            break
+
+    # Limit to 3 questions, shuffle for variety
+    random.shuffle(questions)
+    for q in questions[:3]:
+        lines.append(q)
+        lines.append("")
+
+    # Always add a synthesis question
+    if len(active_stocks) >= 3:
+        tickers = [s['ticker'] for s in active_stocks[:5]]
+        lines.append(
+            f"**Synthesis:** Looking at today's discussion across {', '.join(tickers)} - "
+            f"what's the one insight that could actually make you money?"
+        )
         lines.append("")
 
     return "\n".join(lines)
 
 
 def format_quick_movers(active_stocks: list[dict]) -> str:
-    """Format a quick summary of price movers."""
-    lines = ["## Quick Movers\n"]
+    """Format price movers with their sentiment."""
+    lines = ["## Price + Sentiment\n"]
 
-    gainers = []
-    losers = []
-
+    movers = []
     for stock in active_stocks:
-        price_info = stock.get('price_info')
-        if not price_info:
+        price = stock.get('price_info')
+        if not price:
             continue
 
-        change = price_info.get('change_1d', 0)
-        if change >= 2:
-            gainers.append((stock['ticker'], change, stock['company_name']))
-        elif change <= -2:
-            losers.append((stock['ticker'], change, stock['company_name']))
+        change = price.get('change_1d', 0)
+        twitter = stock.get('twitter_mentions', [])
+        bullish = sum(1 for m in twitter if m.get('sentiment') == 'bullish')
+        bearish = sum(1 for m in twitter if m.get('sentiment') == 'bearish')
 
-    if gainers:
-        gainers.sort(key=lambda x: x[1], reverse=True)
-        lines.append("**Top Gainers:**")
-        for ticker, change, name in gainers[:5]:
-            lines.append(f"- {ticker} ({name}): +{change:.1f}%")
-        lines.append("")
+        movers.append({
+            'ticker': stock['ticker'],
+            'name': stock['company_name'],
+            'change': change,
+            'price': price.get('price', 0),
+            'bullish': bullish,
+            'bearish': bearish,
+            'total': len(twitter),
+        })
 
-    if losers:
-        losers.sort(key=lambda x: x[1])
-        lines.append("**Notable Drops:**")
-        for ticker, change, name in losers[:5]:
-            lines.append(f"- {ticker} ({name}): {change:.1f}%")
-        lines.append("")
+    movers.sort(key=lambda x: abs(x['change']), reverse=True)
 
-    if not gainers and not losers:
-        lines.append("*No major moves today (>2%)*\n")
-
-    return "\n".join(lines)
-
-
-def format_category_breakdown(active_stocks: list[dict]) -> str:
-    """Group active stocks by category/theme."""
-    by_category = {}
-
-    for stock in active_stocks:
-        cat = stock.get('category', 'other')
-        theme = stock.get('theme', '')
-        key = theme if theme else cat.replace('_', ' ').title()
-
-        if key not in by_category:
-            by_category[key] = []
-        by_category[key].append(stock)
-
-    lines = ["## Activity by Theme\n"]
-
-    for category, stocks in sorted(by_category.items()):
-        tickers = [s['ticker'] for s in stocks[:8]]
-        lines.append(f"**{category}:** {', '.join(tickers)}")
+    for m in movers[:8]:
+        sign = "+" if m['change'] >= 0 else ""
+        sentiment = ""
+        if m['total'] > 0:
+            sentiment = f" | {m['bullish']}🟢 {m['bearish']}🔴"
+        lines.append(f"- **{m['ticker']}** ${m['price']:.2f} ({sign}{m['change']:.1f}%){sentiment}")
 
     lines.append("")
     return "\n".join(lines)
 
 
-def generate_learning_questions(active_stocks: list[dict]) -> str:
-    """Generate questions based on today's active stocks."""
-    lines = ["## Learning Questions\n"]
-    lines.append("*Sharpen your thinking - respond to log your analysis*\n")
-
-    # Dynamic questions based on active stocks
-    if active_stocks:
-        top_stock = active_stocks[0]
-        ticker = top_stock['ticker']
-        name = top_stock['company_name']
-
-        questions = [
-            f"**Q1:** {ticker} ({name}) had the most discussion today. What's driving the conversation? Is the sentiment bullish or bearish?",
-            f"**Q2:** Of the stocks with activity today, which one do you think offers the best risk/reward at current prices? Why?",
-            f"**Q3:** Pick one stock from today's report. What would need to happen for you to buy (or sell) it tomorrow?",
-        ]
-    else:
-        questions = [
-            "**Q1:** No major stock-specific news today. Is that bullish (market digesting gains) or concerning (losing momentum)?",
-            "**Q2:** Without news flow, what stocks on your watchlist would you research deeper today?",
-            "**Q3:** What macro factors are you watching that could impact your AI/tech positions?",
-        ]
-
-    for q in questions:
-        lines.append(q)
-        lines.append("")
-
-    return "\n".join(lines)
-
-
-def format_recent_content(days_back: int = 3) -> str:
-    """Show recent must-read content from Substacks/Podcasts."""
-    lines = ["## Recent Must-Read Content\n"]
-
-    articles = fetch_all_substacks(days_back)
-    podcasts = fetch_all_podcasts(days_back * 2)
-
-    # Filter to must-reads
-    must_reads = [a for a in articles if a.get('must_read')][:3]
-    top_podcasts = podcasts[:2]
-
-    if must_reads:
-        lines.append("**Substacks:**")
-        for a in must_reads:
-            lines.append(f"- [{a['source_name']}] [{a['title']}]({a['link']})")
-        lines.append("")
-
-    if top_podcasts:
-        lines.append("**Podcasts:**")
-        for p in top_podcasts:
-            lines.append(f"- [{p['podcast_name']}] {p['title']}")
-        lines.append("")
-
-    if not must_reads and not top_podcasts:
-        lines.append("*No new must-read content today*\n")
-
-    return "\n".join(lines)
-
-
 def generate_daily_report(
-    days_back: int = 1,
+    days_back: int = 2,
     max_stocks: int = 15,
     output_path: Optional[Path] = None,
 ) -> str:
     """
-    Generate the stock-focused daily morning report.
-
-    Searches for what people are saying about each stock in your watchlist
-    and surfaces the most active/interesting discussions.
+    Generate Twitter-first daily report.
+    Shows actual takes and sentiment from your followed accounts.
     """
     config = load_config()
     today = datetime.now().strftime("%Y-%m-%d")
     weekday = datetime.now().strftime("%A")
 
-    print("Searching for stock activity across all sources...")
-    print("This may take a few minutes...\n")
+    print("Scanning for Twitter activity on your watchlist...")
 
     # Find stocks with activity
     active_stocks = find_active_stocks(
@@ -242,55 +359,53 @@ def generate_daily_report(
 
     total_stocks = len(get_all_tickers())
     active_count = len(active_stocks)
+    total_takes = sum(len(s.get('twitter_mentions', [])) for s in active_stocks)
 
     # Build report
     report_lines = [
-        f"# AI Investing Daily Brief",
+        f"# AI Investing Brief",
         f"**{weekday}, {today}**\n",
-        f"*Scanned {total_stocks} stocks. {active_count} with mentions today.*",
+        f"*{active_count} stocks with activity | {total_takes} Twitter takes found*",
         "",
         "---\n",
     ]
 
-    # Quick movers section (if we have price data)
     if active_stocks:
+        # Price + Sentiment overview
         report_lines.append(format_quick_movers(active_stocks))
         report_lines.append("---\n")
 
-        # Theme breakdown
-        report_lines.append(format_category_breakdown(active_stocks))
+        # Sentiment overview
+        report_lines.append(format_sentiment_overview(active_stocks))
         report_lines.append("---\n")
 
-        # Main stock-by-stock section
+        # Main section: What people are saying
         report_lines.append("## What People Are Saying\n")
 
         for stock in active_stocks:
-            report_lines.append(format_stock_section(stock))
-            report_lines.append("---\n")
+            if stock.get('twitter_mentions') or stock.get('substack_mentions'):
+                report_lines.append(format_stock_section(stock))
+                report_lines.append("---\n")
 
     else:
-        report_lines.append("## No Major Activity Today\n")
-        report_lines.append("*Your watchlist stocks weren't heavily discussed today.*")
-        report_lines.append("*This could mean: consolidation phase, or worth checking prices for quiet accumulation.*\n")
+        report_lines.append("## Quiet Day\n")
+        report_lines.append("*No significant Twitter activity on your watchlist stocks today.*\n")
         report_lines.append("---\n")
 
-    # Recent must-read content
-    report_lines.append(format_recent_content(days_back + 2))
-    report_lines.append("---\n")
-
-    # Learning questions
-    report_lines.append(generate_learning_questions(active_stocks))
+    # Dynamic questions based on actual content
+    report_lines.append(generate_dynamic_questions(active_stocks))
     report_lines.append("---\n")
 
     # Call to action
     report_lines.extend([
-        "## Make Your Picks\n",
-        "Reply with your thoughts and they'll be logged automatically.",
-        "",
-        "Example: *\"Bullish on NVDA, datacenter numbers look strong. Watching AMD for MI300 traction.\"*",
+        "## Your Turn\n",
+        "Reply with your take. Examples:",
+        "- *\"The NVDA bulls are missing the margin pressure from competition\"*",
+        "- *\"Adding AMD here, the MI300 ramp is underappreciated\"*",
+        "- *\"Staying away from SMCI until accounting clears up\"*",
         "",
         "---",
-        f"*Report generated: {datetime.now().isoformat()}*",
+        f"*Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')} | [Rollback: see backup files]*",
     ])
 
     report = "\n".join(report_lines)
@@ -309,7 +424,7 @@ def generate_daily_report(
 
 
 if __name__ == "__main__":
-    print("Generating stock-focused daily report...\n")
+    print("Generating Twitter-first daily report...\n")
     print("=" * 50)
     report = generate_daily_report()
     print("\n" + "=" * 50 + "\n")
