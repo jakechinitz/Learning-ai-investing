@@ -6,11 +6,21 @@ feedparser>=6.0.0
 # Configuration
 PyYAML>=6.0
 
+# Environment variables
+python-dotenv>=1.0.0
+
+# Telegram bot
+python-telegram-bot>=20.0
+
+# Email (HTML conversion)
+markdown>=3.5.0
+
+# Optional: Email providers
+# resend>=0.7.0
+# sendgrid>=6.10.0
+
 # Optional: Stock price fetching
 yfinance>=0.2.0
 
 # Optional: Better terminal output
 rich>=13.0.0
-
-# For future Claude integration
-anthropic>=0.18.0

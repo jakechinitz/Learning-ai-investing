@@ -139,81 +139,314 @@ podcasts:
     why_listen: "Deep technical context, understand where AI is heading"
     filter_for: "AI-focused episodes"
 
-# Key stocks to track mentions of
+# ===========================================
+# COMPREHENSIVE STOCK WATCHLIST
+# Includes all SOXX holdings + AI/Tech leaders
+# ===========================================
+
 watchlist:
-  mega_cap:
+  # =====================
+  # MEGA CAP TECH (AI Leaders)
+  # =====================
+  mega_cap_ai:
     - symbol: "NVDA"
       name: "NVIDIA"
-      thesis: "AI compute infrastructure leader"
+      thesis: "AI compute infrastructure leader, datacenter GPUs, CUDA moat"
+      in_soxx: true
     - symbol: "MSFT"
       name: "Microsoft"
-      thesis: "Enterprise AI, OpenAI partnership, Azure"
+      thesis: "Enterprise AI, OpenAI partnership, Azure AI, Copilot"
     - symbol: "GOOGL"
       name: "Alphabet"
-      thesis: "AI research leader, search moat, cloud"
+      thesis: "AI research leader (DeepMind, Gemini), search moat, cloud"
     - symbol: "AMZN"
       name: "Amazon"
-      thesis: "AWS AI services, logistics AI"
+      thesis: "AWS AI services (Bedrock, Trainium), logistics AI"
     - symbol: "META"
       name: "Meta"
-      thesis: "Open source AI, recommendation systems"
+      thesis: "Open source AI (Llama), recommendation systems, AI ads"
     - symbol: "AAPL"
       name: "Apple"
-      thesis: "On-device AI, ecosystem lock-in"
+      thesis: "On-device AI, Apple Intelligence, ecosystem lock-in"
 
-  semiconductors:
-    - symbol: "AMD"
-      name: "AMD"
-      thesis: "AI GPU challenger, MI300"
+  # =====================
+  # SOXX HOLDINGS - Full List
+  # Semiconductors ETF (~35 stocks)
+  # =====================
+  soxx_top_holdings:
     - symbol: "AVGO"
       name: "Broadcom"
-      thesis: "Custom AI chips, networking"
-    - symbol: "TSM"
-      name: "TSMC"
-      thesis: "AI chip manufacturing monopoly"
+      thesis: "Custom AI ASICs (Google TPU), networking chips, VMware"
+      in_soxx: true
+      weight: "~8.8%"
+    - symbol: "AMD"
+      name: "Advanced Micro Devices"
+      thesis: "AI GPU challenger (MI300X), datacenter CPUs, gaming"
+      in_soxx: true
+      weight: "~8.7%"
+    - symbol: "MU"
+      name: "Micron Technology"
+      thesis: "HBM memory for AI GPUs, DRAM/NAND leader"
+      in_soxx: true
+      weight: "~6.4%"
+    - symbol: "INTC"
+      name: "Intel"
+      thesis: "Foundry ambitions, Gaudi AI accelerators, PC recovery"
+      in_soxx: true
+      weight: "~5.2%"
+    - symbol: "AMAT"
+      name: "Applied Materials"
+      thesis: "Semiconductor equipment, benefits from fab buildout"
+      in_soxx: true
+      weight: "~5.1%"
+    - symbol: "QCOM"
+      name: "Qualcomm"
+      thesis: "Mobile AI chips, Snapdragon, automotive, IoT"
+      in_soxx: true
+      weight: "~5.1%"
+    - symbol: "LRCX"
+      name: "Lam Research"
+      thesis: "Etch and deposition equipment, memory capex beneficiary"
+      in_soxx: true
+      weight: "~5.0%"
+    - symbol: "MRVL"
+      name: "Marvell Technology"
+      thesis: "Custom AI silicon, 5G infrastructure, data center"
+      in_soxx: true
+      weight: "~4.6%"
     - symbol: "ASML"
-      name: "ASML"
-      thesis: "EUV lithography monopoly"
+      name: "ASML Holding"
+      thesis: "EUV lithography monopoly, enables leading-edge nodes"
+      in_soxx: true
+      weight: "~4.4%"
+    - symbol: "TSM"
+      name: "Taiwan Semiconductor"
+      thesis: "Advanced chip manufacturing monopoly, makes AI chips"
+      in_soxx: true
+      weight: "~4.2%"
+
+  soxx_mid_holdings:
+    - symbol: "ADI"
+      name: "Analog Devices"
+      thesis: "Analog/mixed-signal chips, industrial, automotive"
+      in_soxx: true
+    - symbol: "TXN"
+      name: "Texas Instruments"
+      thesis: "Analog chips, diversified end markets, fab capacity"
+      in_soxx: true
+    - symbol: "KLAC"
+      name: "KLA Corporation"
+      thesis: "Process control equipment, defect inspection"
+      in_soxx: true
+    - symbol: "NXPI"
+      name: "NXP Semiconductors"
+      thesis: "Automotive chips, IoT, secure connectivity"
+      in_soxx: true
+    - symbol: "ON"
+      name: "ON Semiconductor"
+      thesis: "Power semiconductors, EV/automotive, image sensors"
+      in_soxx: true
+    - symbol: "MPWR"
+      name: "Monolithic Power Systems"
+      thesis: "Power management ICs, AI server power delivery"
+      in_soxx: true
+    - symbol: "MCHP"
+      name: "Microchip Technology"
+      thesis: "Microcontrollers, embedded systems, industrial"
+      in_soxx: true
     - symbol: "ARM"
       name: "Arm Holdings"
-      thesis: "Chip architecture licensing"
-    - symbol: "MRVL"
-      name: "Marvell"
-      thesis: "Custom AI silicon, data center"
+      thesis: "Chip architecture licensing, AI edge, mobile, datacenter"
+      in_soxx: true
+    - symbol: "GFS"
+      name: "GlobalFoundries"
+      thesis: "Specialty foundry, trailing-edge manufacturing"
+      in_soxx: true
+    - symbol: "SWKS"
+      name: "Skyworks Solutions"
+      thesis: "RF semiconductors, 5G, mobile connectivity"
+      in_soxx: true
 
+  soxx_smaller_holdings:
+    - symbol: "ENTG"
+      name: "Entegris"
+      thesis: "Specialty materials for chip manufacturing"
+      in_soxx: true
+    - symbol: "TER"
+      name: "Teradyne"
+      thesis: "Semiconductor test equipment, robotics"
+      in_soxx: true
+    - symbol: "MKSI"
+      name: "MKS Instruments"
+      thesis: "Process control, lasers, semiconductor equipment"
+      in_soxx: true
+    - symbol: "QRVO"
+      name: "Qorvo"
+      thesis: "RF solutions, 5G infrastructure, defense"
+      in_soxx: true
+    - symbol: "WOLF"
+      name: "Wolfspeed"
+      thesis: "Silicon carbide (SiC) for EVs and power"
+      in_soxx: true
+    - symbol: "LSCC"
+      name: "Lattice Semiconductor"
+      thesis: "Low-power FPGAs, edge AI, industrial"
+      in_soxx: true
+    - symbol: "ACLS"
+      name: "Axcelis Technologies"
+      thesis: "Ion implantation equipment, SiC focus"
+      in_soxx: true
+    - symbol: "AMKR"
+      name: "Amkor Technology"
+      thesis: "Semiconductor packaging and test (OSAT)"
+      in_soxx: true
+    - symbol: "CRUS"
+      name: "Cirrus Logic"
+      thesis: "Audio chips, Apple supplier, haptics"
+      in_soxx: true
+    - symbol: "SLAB"
+      name: "Silicon Labs"
+      thesis: "IoT chips, wireless connectivity"
+      in_soxx: true
+    - symbol: "ALGM"
+      name: "Allegro MicroSystems"
+      thesis: "Magnetic sensors, power ICs, automotive"
+      in_soxx: true
+    - symbol: "RMBS"
+      name: "Rambus"
+      thesis: "Memory interface chips, IP licensing"
+      in_soxx: true
+    - symbol: "COHR"
+      name: "Coherent"
+      thesis: "Optical components, lasers, datacom"
+      in_soxx: true
+    - symbol: "MTSI"
+      name: "MACOM Technology"
+      thesis: "Analog/mixed-signal for telecom, datacenter"
+      in_soxx: true
+    - symbol: "DIOD"
+      name: "Diodes Incorporated"
+      thesis: "Discrete semiconductors, analog products"
+      in_soxx: true
+
+  # =====================
+  # AI SOFTWARE & PLATFORMS
+  # =====================
   ai_software:
     - symbol: "CRM"
       name: "Salesforce"
-      thesis: "Enterprise AI agents"
+      thesis: "Enterprise AI agents (Agentforce), CRM AI"
     - symbol: "NOW"
       name: "ServiceNow"
-      thesis: "Enterprise AI workflows"
+      thesis: "Enterprise AI workflows, IT automation"
     - symbol: "PLTR"
       name: "Palantir"
-      thesis: "AI platform for enterprises/government"
+      thesis: "AI platform for enterprises/government, AIP"
     - symbol: "SNOW"
       name: "Snowflake"
-      thesis: "Data cloud, AI data infrastructure"
+      thesis: "Data cloud, AI data infrastructure, Cortex"
     - symbol: "MDB"
       name: "MongoDB"
-      thesis: "Vector database for AI"
+      thesis: "Document database, vector search for AI"
     - symbol: "DDOG"
       name: "Datadog"
-      thesis: "Observability for AI infrastructure"
+      thesis: "Observability for AI infrastructure, LLM monitoring"
+    - symbol: "PANW"
+      name: "Palo Alto Networks"
+      thesis: "AI-powered cybersecurity, SOC automation"
+    - symbol: "CRWD"
+      name: "CrowdStrike"
+      thesis: "AI endpoint security, Charlotte AI"
+    - symbol: "ZS"
+      name: "Zscaler"
+      thesis: "Zero trust security, AI threat detection"
+    - symbol: "NET"
+      name: "Cloudflare"
+      thesis: "Edge AI inference, Workers AI"
+    - symbol: "TEAM"
+      name: "Atlassian"
+      thesis: "AI-powered dev tools, Atlassian Intelligence"
+    - symbol: "HUBS"
+      name: "HubSpot"
+      thesis: "AI marketing/sales automation"
 
-  ai_pure_plays:
+  # =====================
+  # AI INFRASTRUCTURE
+  # =====================
+  ai_infrastructure:
     - symbol: "SMCI"
       name: "Super Micro Computer"
-      thesis: "AI server infrastructure"
+      thesis: "AI server infrastructure, liquid cooling"
     - symbol: "VRT"
       name: "Vertiv"
-      thesis: "Data center power/cooling"
+      thesis: "Data center power and cooling for AI"
     - symbol: "DELL"
-      name: "Dell"
-      thesis: "AI server sales"
+      name: "Dell Technologies"
+      thesis: "AI server sales, enterprise infrastructure"
+    - symbol: "HPE"
+      name: "Hewlett Packard Enterprise"
+      thesis: "AI servers, Cray supercomputers"
+    - symbol: "ANET"
+      name: "Arista Networks"
+      thesis: "AI datacenter networking, 800G switches"
+    - symbol: "CSCO"
+      name: "Cisco"
+      thesis: "Networking for AI datacenters, Splunk AI"
+    - symbol: "VST"
+      name: "Vistra"
+      thesis: "Power generation for AI datacenters"
+    - symbol: "CEG"
+      name: "Constellation Energy"
+      thesis: "Nuclear power for AI datacenters"
+    - symbol: "EQIX"
+      name: "Equinix"
+      thesis: "Data center REIT, AI colocation"
+    - symbol: "DLR"
+      name: "Digital Realty"
+      thesis: "Data center REIT, hyperscaler partnerships"
+
+  # =====================
+  # AI APPLICATIONS & PURE PLAYS
+  # =====================
+  ai_pure_plays:
     - symbol: "PATH"
       name: "UiPath"
-      thesis: "AI automation"
+      thesis: "AI-powered RPA, process automation"
+    - symbol: "AI"
+      name: "C3.ai"
+      thesis: "Enterprise AI applications platform"
+    - symbol: "BBAI"
+      name: "BigBear.ai"
+      thesis: "AI for defense and intelligence"
+    - symbol: "SOUN"
+      name: "SoundHound AI"
+      thesis: "Voice AI, conversational interfaces"
+    - symbol: "UPST"
+      name: "Upstart"
+      thesis: "AI lending platform"
+    - symbol: "S"
+      name: "SentinelOne"
+      thesis: "AI-powered endpoint security"
+
+  # =====================
+  # CLOUD HYPERSCALERS
+  # =====================
+  cloud:
+    - symbol: "MSFT"
+      name: "Microsoft Azure"
+      thesis: "Azure AI, OpenAI partnership, enterprise cloud"
+    - symbol: "AMZN"
+      name: "Amazon AWS"
+      thesis: "Bedrock, Trainium/Inferentia, largest cloud"
+    - symbol: "GOOGL"
+      name: "Google Cloud"
+      thesis: "Vertex AI, TPUs, Gemini integration"
+    - symbol: "ORCL"
+      name: "Oracle"
+      thesis: "OCI AI, database AI, enterprise cloud"
+    - symbol: "IBM"
+      name: "IBM"
+      thesis: "WatsonX, enterprise AI, hybrid cloud"
 
 # Educational frameworks to apply
 learning_frameworks:

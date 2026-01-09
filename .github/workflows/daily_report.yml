@@ -7,7 +7,7 @@ on:
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
-  generate-report:
+  generate-and-send:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,6 +27,26 @@ jobs:
         run: |
           python -m src.report_generator
 
+      - name: Send via Telegram
+        if: ${{ env.TELEGRAM_BOT_TOKEN != '' }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python -m src.delivery.telegram_bot --send-report
+
+      - name: Send via Email (fallback)
+        if: ${{ env.TELEGRAM_BOT_TOKEN == '' && env.EMAIL_TO != '' }}
+        env:
+          EMAIL_PROVIDER: ${{ secrets.EMAIL_PROVIDER }}
+          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+        run: |
+          python -m src.delivery.email_sender
+
       - name: Commit and push report
         run: |
           git config --local user.email "action@github.com"
@@ -36,14 +56,3 @@ jobs:
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Optional: Send notification (uncomment and configure)
-      # - name: Send Slack notification
-      #   uses: slackapi/slack-github-action@v1
-      #   with:
-      #     payload: |
-      #       {
-      #         "text": "🌅 Your daily AI investing report is ready!"
-      #       }
-      #   env:
-      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
