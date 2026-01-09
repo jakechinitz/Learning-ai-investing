@@ -625,10 +625,10 @@ watchlist:
       theme: "Cyber AI"
 
   # =====================
-  # 2026 THEMES - FINTECH/HEALTH/LAGGARDS
+  # 2026 THEMES - FINTECH
   # Modernization plays, AI-enabled disruption
   # =====================
-  fintech_health:
+  fintech:
     - symbol: "HOOD"
       name: "Robinhood"
       thesis: "Retail trading OS, prediction markets, crypto"
@@ -637,22 +637,10 @@ watchlist:
       name: "SoFi Technologies"
       thesis: "Digital banking modernization, AI lending"
       theme: "Fintech AI"
-    - symbol: "OSCR"
-      name: "Oscar Health"
-      thesis: "AI care-routing, health insurance disruptor"
-      theme: "Health AI"
     - symbol: "LMND"
       name: "Lemonade"
       thesis: "AI-first insurance, claims automation"
       theme: "Fintech AI"
-    - symbol: "HIMS"
-      name: "Hims & Hers"
-      thesis: "Telehealth, AI personalization, GLP-1 plays"
-      theme: "Health AI"
-    - symbol: "NVO"
-      name: "Novo Nordisk"
-      thesis: "GLP-1 leader (Ozempic/Wegovy), health AI integration"
-      theme: "Health AI"
 
   # =====================
   # 2026 THEMES - QUANTUM

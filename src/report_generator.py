@@ -1,19 +1,19 @@
 """
-Daily AI Investing Report Generator
-Aggregates content and generates an educational morning briefing
+Stock-Centric Daily AI Investing Report
+Searches across social media and news for what people are saying about your stocks
 """
 
 import yaml
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-import json
 import random
 
 from src.fetchers import (
+    find_active_stocks,
+    get_all_tickers,
     fetch_all_substacks,
     fetch_all_podcasts,
-    fetch_all_twitter,
 )
 
 
@@ -24,209 +24,274 @@ def load_config() -> dict:
         return yaml.safe_load(f)
 
 
-def format_substack_section(articles: list[dict]) -> str:
-    """Format Substack articles for the report."""
-    if not articles:
-        return "_No new Substack articles today._\n"
+def format_price_badge(price_info: dict) -> str:
+    """Format price info as a compact badge."""
+    if not price_info:
+        return ""
+
+    price = price_info.get('price', 0)
+    change = price_info.get('change_1d', 0)
+
+    if change >= 3:
+        emoji = "🚀"
+    elif change >= 1:
+        emoji = "📈"
+    elif change <= -3:
+        emoji = "📉"
+    elif change <= -1:
+        emoji = "⬇️"
+    else:
+        emoji = "➡️"
+
+    sign = "+" if change >= 0 else ""
+    return f"{emoji} ${price:.2f} ({sign}{change:.1f}%)"
+
+
+def format_stock_section(stock_data: dict) -> str:
+    """Format a single stock's activity section."""
+    ticker = stock_data['ticker']
+    name = stock_data['company_name']
+    mentions = stock_data.get('mentions', [])
+    price_info = stock_data.get('price_info')
+    thesis = stock_data.get('thesis', '')
 
     lines = []
-    for article in articles[:10]:  # Limit to 10
-        must_read = "🔥 " if article.get('must_read') else ""
-        lines.append(f"### {must_read}{article['source_name']}")
-        lines.append(f"**{article['title']}**")
-        lines.append(f"- Focus: {article.get('focus', 'N/A')}")
-        lines.append(f"- [Read Article]({article['link']})")
-        if article.get('summary'):
-            summary = article['summary'][:300].replace('\n', ' ')
-            lines.append(f"- Preview: {summary}...")
+
+    # Header with price
+    price_badge = format_price_badge(price_info)
+    lines.append(f"### {ticker} - {name} {price_badge}")
+
+    # 5-day context if available
+    if price_info and price_info.get('change_5d'):
+        five_day = price_info['change_5d']
+        sign = "+" if five_day >= 0 else ""
+        lines.append(f"*5-day: {sign}{five_day:.1f}%*")
+
+    lines.append("")
+
+    # Investment thesis reminder
+    if thesis:
+        lines.append(f"**Thesis:** {thesis}")
+        lines.append("")
+
+    # What people are saying
+    if mentions:
+        lines.append(f"**{len(mentions)} mentions found:**")
+        lines.append("")
+
+        for m in mentions[:6]:  # Show top 6
+            source = m['source']
+            title = m.get('title', '')[:200]
+            link = m.get('link', '')
+
+            if link:
+                lines.append(f"- **[{source}]** [{title}]({link})")
+            else:
+                lines.append(f"- **[{source}]** {title}")
+
         lines.append("")
 
     return "\n".join(lines)
 
 
-def format_podcast_section(episodes: list[dict]) -> str:
-    """Format podcast episodes for the report."""
-    if not episodes:
-        return "_No new podcast episodes this week._\n"
+def format_quick_movers(active_stocks: list[dict]) -> str:
+    """Format a quick summary of price movers."""
+    lines = ["## Quick Movers\n"]
 
-    lines = []
-    for ep in episodes[:8]:
-        stocks = ep.get('stocks_mentioned', [])
-        stock_badge = f" `{', '.join(stocks)}`" if stocks else ""
-        lines.append(f"### {ep['podcast_name']}{stock_badge}")
-        lines.append(f"**{ep['title']}**")
-        lines.append(f"- Hosts: {ep.get('hosts', 'N/A')}")
-        lines.append(f"- Why listen: {ep.get('why_listen', 'N/A')}")
-        if ep.get('duration'):
-            lines.append(f"- Duration: {ep['duration']}")
-        lines.append(f"- [Listen]({ep['link']})")
-        lines.append("")
+    gainers = []
+    losers = []
 
-    return "\n".join(lines)
-
-
-def format_twitter_section(posts: list[dict]) -> str:
-    """Format Twitter highlights for the report."""
-    if not posts:
-        return """_No curated Twitter highlights today._
-
-**To add Twitter highlights:**
-1. Throughout the day, save interesting AI investing tweets
-2. Add them to `data/twitter_highlights.json`
-3. Include the reasoning for why they matter
-"""
-
-    lines = []
-    for post in posts[:10]:
-        lines.append(f"### {post['handle']}")
-        lines.append(f"> {post['content'][:280]}")
-        if post.get('reasoning'):
-            lines.append(f"- **Why it matters:** {post['reasoning']}")
-        if post.get('stocks_mentioned'):
-            lines.append(f"- Stocks: `{', '.join(post['stocks_mentioned'])}`")
-        lines.append(f"- [View Tweet]({post['link']})")
-        lines.append("")
-
-    return "\n".join(lines)
-
-
-def generate_learning_questions(config: dict) -> str:
-    """
-    Generate educational questions based on frameworks.
-    These help build investing intuition over time.
-    """
-    frameworks = config.get('learning_frameworks', {})
-
-    # General thinking questions
-    general_questions = [
-        "What's the bull case you found most compelling today? What's the strongest counter-argument?",
-        "Which company mentioned today has the strongest moat? Why?",
-        "If you had to buy one stock from today's report and hold for 5 years, which would it be and why?",
-        "What's the biggest risk to AI investments that wasn't discussed?",
-        "Which valuation seems most stretched? Which seems most reasonable?",
-    ]
-
-    # Framework-based questions
-    framework_questions = [
-        "Using the 'right to win' framework: Which company has the clearest path to AI dominance?",
-        "Consider 'picks and shovels' vs 'direct AI bets': Which approach is better right now?",
-        "Apply the Rule of 40: Which SaaS/AI company offers the best growth/profitability balance?",
-        "Think about data moats: Who has the most defensible data advantage?",
-        "What's priced in? Pick one stock and steelman why current prices already reflect the upside.",
-    ]
-
-    # Stock-specific questions
-    specific_questions = [
-        "NVIDIA vs AMD: What would need to happen for AMD to close the gap?",
-        "Microsoft vs Google in AI: Who has the better strategy? Why?",
-        "Palantir vs Snowflake: Which is the better AI platform bet?",
-        "Compare two chip companies: ASML vs TSMC. Different parts of the stack - which is better positioned?",
-        "Meta's open-source AI strategy: Brilliant or giving away the farm?",
-    ]
-
-    # Select questions
-    selected = [
-        random.choice(general_questions),
-        random.choice(framework_questions),
-        random.choice(specific_questions),
-    ]
-
-    lines = ["## 📝 Today's Learning Questions\n"]
-    lines.append("*Answer these to sharpen your investing intuition. Log your responses!*\n")
-
-    for i, q in enumerate(selected, 1):
-        lines.append(f"**Q{i}:** {q}\n")
-
-    lines.append("---")
-    lines.append("*Record your answers using: `python -m src.pick_tracker respond`*")
-
-    return "\n".join(lines)
-
-
-def generate_watchlist_status(config: dict) -> str:
-    """Generate a quick watchlist status section."""
-    watchlist = config.get('watchlist', {})
-
-    lines = ["## 📊 Watchlist Quick Reference\n"]
-
-    for category, stocks in watchlist.items():
-        if not isinstance(stocks, list):
+    for stock in active_stocks:
+        price_info = stock.get('price_info')
+        if not price_info:
             continue
 
-        category_name = category.replace('_', ' ').title()
-        lines.append(f"### {category_name}")
+        change = price_info.get('change_1d', 0)
+        if change >= 2:
+            gainers.append((stock['ticker'], change, stock['company_name']))
+        elif change <= -2:
+            losers.append((stock['ticker'], change, stock['company_name']))
 
-        for stock in stocks[:6]:  # Limit per category
-            lines.append(f"- **{stock['symbol']}** ({stock['name']}): {stock['thesis']}")
-
+    if gainers:
+        gainers.sort(key=lambda x: x[1], reverse=True)
+        lines.append("**Top Gainers:**")
+        for ticker, change, name in gainers[:5]:
+            lines.append(f"- {ticker} ({name}): +{change:.1f}%")
         lines.append("")
+
+    if losers:
+        losers.sort(key=lambda x: x[1])
+        lines.append("**Notable Drops:**")
+        for ticker, change, name in losers[:5]:
+            lines.append(f"- {ticker} ({name}): {change:.1f}%")
+        lines.append("")
+
+    if not gainers and not losers:
+        lines.append("*No major moves today (>2%)*\n")
+
+    return "\n".join(lines)
+
+
+def format_category_breakdown(active_stocks: list[dict]) -> str:
+    """Group active stocks by category/theme."""
+    by_category = {}
+
+    for stock in active_stocks:
+        cat = stock.get('category', 'other')
+        theme = stock.get('theme', '')
+        key = theme if theme else cat.replace('_', ' ').title()
+
+        if key not in by_category:
+            by_category[key] = []
+        by_category[key].append(stock)
+
+    lines = ["## Activity by Theme\n"]
+
+    for category, stocks in sorted(by_category.items()):
+        tickers = [s['ticker'] for s in stocks[:8]]
+        lines.append(f"**{category}:** {', '.join(tickers)}")
+
+    lines.append("")
+    return "\n".join(lines)
+
+
+def generate_learning_questions(active_stocks: list[dict]) -> str:
+    """Generate questions based on today's active stocks."""
+    lines = ["## Learning Questions\n"]
+    lines.append("*Sharpen your thinking - respond to log your analysis*\n")
+
+    # Dynamic questions based on active stocks
+    if active_stocks:
+        top_stock = active_stocks[0]
+        ticker = top_stock['ticker']
+        name = top_stock['company_name']
+
+        questions = [
+            f"**Q1:** {ticker} ({name}) had the most discussion today. What's driving the conversation? Is the sentiment bullish or bearish?",
+            f"**Q2:** Of the stocks with activity today, which one do you think offers the best risk/reward at current prices? Why?",
+            f"**Q3:** Pick one stock from today's report. What would need to happen for you to buy (or sell) it tomorrow?",
+        ]
+    else:
+        questions = [
+            "**Q1:** No major stock-specific news today. Is that bullish (market digesting gains) or concerning (losing momentum)?",
+            "**Q2:** Without news flow, what stocks on your watchlist would you research deeper today?",
+            "**Q3:** What macro factors are you watching that could impact your AI/tech positions?",
+        ]
+
+    for q in questions:
+        lines.append(q)
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def format_recent_content(days_back: int = 3) -> str:
+    """Show recent must-read content from Substacks/Podcasts."""
+    lines = ["## Recent Must-Read Content\n"]
+
+    articles = fetch_all_substacks(days_back)
+    podcasts = fetch_all_podcasts(days_back * 2)
+
+    # Filter to must-reads
+    must_reads = [a for a in articles if a.get('must_read')][:3]
+    top_podcasts = podcasts[:2]
+
+    if must_reads:
+        lines.append("**Substacks:**")
+        for a in must_reads:
+            lines.append(f"- [{a['source_name']}] [{a['title']}]({a['link']})")
+        lines.append("")
+
+    if top_podcasts:
+        lines.append("**Podcasts:**")
+        for p in top_podcasts:
+            lines.append(f"- [{p['podcast_name']}] {p['title']}")
+        lines.append("")
+
+    if not must_reads and not top_podcasts:
+        lines.append("*No new must-read content today*\n")
 
     return "\n".join(lines)
 
 
 def generate_daily_report(
-    days_back_articles: int = 1,
-    days_back_podcasts: int = 7,
+    days_back: int = 1,
+    max_stocks: int = 15,
     output_path: Optional[Path] = None,
 ) -> str:
     """
-    Generate the complete daily morning report.
+    Generate the stock-focused daily morning report.
 
-    Args:
-        days_back_articles: Days to look back for articles
-        days_back_podcasts: Days to look back for podcasts
-        output_path: Optional path to save the report
-
-    Returns:
-        The complete report as markdown string
+    Searches for what people are saying about each stock in your watchlist
+    and surfaces the most active/interesting discussions.
     """
     config = load_config()
     today = datetime.now().strftime("%Y-%m-%d")
     weekday = datetime.now().strftime("%A")
 
-    # Fetch content
-    articles = fetch_all_substacks(days_back_articles)
-    podcasts = fetch_all_podcasts(days_back_podcasts)
-    twitter = fetch_all_twitter(days_back_articles)
+    print("Searching for stock activity across all sources...")
+    print("This may take a few minutes...\n")
+
+    # Find stocks with activity
+    active_stocks = find_active_stocks(
+        days_back=days_back,
+        min_mentions=1,
+        max_stocks=max_stocks,
+        include_prices=True
+    )
+
+    total_stocks = len(get_all_tickers())
+    active_count = len(active_stocks)
 
     # Build report
     report_lines = [
-        f"# 🌅 AI Investing Morning Brief",
+        f"# AI Investing Daily Brief",
         f"**{weekday}, {today}**\n",
+        f"*Scanned {total_stocks} stocks. {active_count} with mentions today.*",
+        "",
         "---\n",
+    ]
 
-        "## 📰 Substack Highlights\n",
-        format_substack_section(articles),
+    # Quick movers section (if we have price data)
+    if active_stocks:
+        report_lines.append(format_quick_movers(active_stocks))
+        report_lines.append("---\n")
 
-        "---\n",
+        # Theme breakdown
+        report_lines.append(format_category_breakdown(active_stocks))
+        report_lines.append("---\n")
 
-        "## 🎙️ Recent Podcasts\n",
-        format_podcast_section(podcasts),
+        # Main stock-by-stock section
+        report_lines.append("## What People Are Saying\n")
 
-        "---\n",
+        for stock in active_stocks:
+            report_lines.append(format_stock_section(stock))
+            report_lines.append("---\n")
 
-        "## 🐦 Twitter Insights\n",
-        format_twitter_section(twitter),
+    else:
+        report_lines.append("## No Major Activity Today\n")
+        report_lines.append("*Your watchlist stocks weren't heavily discussed today.*")
+        report_lines.append("*This could mean: consolidation phase, or worth checking prices for quiet accumulation.*\n")
+        report_lines.append("---\n")
 
-        "---\n",
+    # Recent must-read content
+    report_lines.append(format_recent_content(days_back + 2))
+    report_lines.append("---\n")
 
-        generate_watchlist_status(config),
+    # Learning questions
+    report_lines.append(generate_learning_questions(active_stocks))
+    report_lines.append("---\n")
 
-        "---\n",
-
-        generate_learning_questions(config),
-
-        "\n---\n",
-
-        "## 📈 Make Your Picks\n",
-        "Based on today's report, log your investment thesis:\n",
-        "```bash",
-        'python -m src.pick_tracker add NVDA "buy" "Strong datacenter growth, AI training demand" --timeframe "6mo"',
-        "```\n",
-
+    # Call to action
+    report_lines.extend([
+        "## Make Your Picks\n",
+        "Reply with your thoughts and they'll be logged automatically.",
+        "",
+        "Example: *\"Bullish on NVDA, datacenter numbers look strong. Watching AMD for MI300 traction.\"*",
+        "",
         "---",
         f"*Report generated: {datetime.now().isoformat()}*",
-    ]
+    ])
 
     report = "\n".join(report_lines)
 
@@ -238,13 +303,14 @@ def generate_daily_report(
     with open(output_path, 'w') as f:
         f.write(report)
 
-    print(f"Report saved to: {output_path}")
+    print(f"\nReport saved to: {output_path}")
 
     return report
 
 
 if __name__ == "__main__":
-    print("Generating daily AI investing report...\n")
+    print("Generating stock-focused daily report...\n")
+    print("=" * 50)
     report = generate_daily_report()
-    print("\n" + "="*50 + "\n")
+    print("\n" + "=" * 50 + "\n")
     print(report)

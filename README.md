@@ -1,13 +1,14 @@
 # AI Investing Learning System
 
-A personal system for learning AI/tech investing through curated content, daily briefings delivered to your phone, and automatic pick tracking.
+A personal system for learning AI/tech investing with **stock-focused daily briefings** that search across social media and news for what people are saying about your 100+ watchlist stocks.
 
 ## What This Does
 
-1. **Daily Briefings Delivered to You** - Get a push notification every morning with AI investing news
-2. **Just Reply** - Respond naturally and your picks are auto-extracted and logged
-3. **Track Performance** - See how your picks do over time
-4. **Learn by Doing** - Educational questions to build investing intuition
+1. **Stock-Focused Intelligence** - Scans Twitter, Substacks, and Google News for mentions of your watchlist stocks
+2. **Daily Briefings at 5 AM EST** - Get a Telegram notification with price movers and social sentiment
+3. **Just Reply** - Respond naturally and your picks are auto-extracted and logged
+4. **Track Performance** - See how your picks do over time
+5. **Learn by Doing** - Dynamic educational questions based on the day's active stocks
 
 ## Quick Start (5 minutes)
 
@@ -47,10 +48,19 @@ See `.env.example` for Gmail, Resend, or SendGrid configuration.
 
 ## Daily Workflow
 
-### Morning
+### Morning (5 AM EST)
 - Get a Telegram notification with your daily briefing
-- Read the curated content (Substacks, podcasts, Twitter insights)
-- See educational questions at the bottom
+- See **which stocks are being discussed** across Twitter, Substacks, and news
+- Price movers highlighted with 1-day and 5-day performance
+- Grouped by investment theme (AI Infrastructure, Nuclear, Robotics, etc.)
+
+### What You'll See
+- **Quick Movers** - Stocks moving >2% with discussion activity
+- **Stock-by-Stock Breakdown** - For each active stock:
+  - Current price and performance
+  - Your investment thesis reminder
+  - Links to what people are saying (with sources)
+- **Learning Questions** - Dynamic questions based on the day's activity
 
 ### Respond Naturally
 Just reply to the bot with your thoughts:
@@ -134,7 +144,7 @@ The system teaches you to think about:
 ```
 Learning-ai-investing/
 ├── config/
-│   └── sources.yaml         # All sources and 70+ stocks
+│   └── sources.yaml         # All sources and 100+ stocks
 ├── data/
 │   ├── picks.json           # Your tracked picks (auto-synced)
 │   ├── question_responses.json
@@ -143,8 +153,12 @@ Learning-ai-investing/
 │   ├── delivery/
 │   │   ├── telegram_bot.py  # Telegram delivery + response parsing
 │   │   └── email_sender.py  # Email delivery option
-│   ├── fetchers/            # Content fetchers
-│   └── report_generator.py  # Builds daily reports
+│   ├── fetchers/
+│   │   ├── stock_search.py  # Social search across sources
+│   │   ├── substack.py      # Substack RSS fetcher
+│   │   ├── twitter.py       # Twitter/Nitter fetcher
+│   │   └── podcasts.py      # Podcast feed fetcher
+│   └── report_generator.py  # Stock-focused report builder
 ├── .env.example             # Configuration template
 └── requirements.txt
 ```
@@ -152,7 +166,8 @@ Learning-ai-investing/
 ## Automation
 
 Reports are automatically generated and sent via GitHub Actions:
-- Every weekday at 7 AM EST
+- Every weekday at 5 AM EST
+- Scans 100+ stocks for social mentions and news
 - Sent to Telegram (or email as fallback)
 - Archived in `data/reports/`
 
