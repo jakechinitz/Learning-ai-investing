@@ -2,8 +2,8 @@ name: Daily AI Investing Report
 
 on:
   schedule:
-    # Run at 7 AM EST (12:00 UTC) every weekday
-    - cron: '0 12 * * 1-5'
+    # Run at 5 AM EST (10:00 UTC) every weekday
+    - cron: '0 10 * * 1-5'
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
