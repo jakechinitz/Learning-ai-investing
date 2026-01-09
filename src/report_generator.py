@@ -396,10 +396,14 @@ def format_general_takes(general_content: list[dict], max_items: int = 8) -> str
         content = item.get('content', item.get('title', ''))[:250]
         sentiment = item.get('sentiment', 'neutral')
         link = item.get('link', '')
+        keywords = item.get('matched_keywords', [])
 
         emoji = "🟢" if sentiment == 'bullish' else "🔴" if sentiment == 'bearish' else "⚪"
 
         lines.append(f"{emoji} **{handle}**: \"{content}\"")
+        if keywords:
+            kw_display = ', '.join(keywords[:4])  # Show up to 4 keywords
+            lines.append(f"   *Keywords: {kw_display}*")
         if link:
             lines.append(f"   [View]({link})")
         lines.append("")

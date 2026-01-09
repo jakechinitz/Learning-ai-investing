@@ -146,28 +146,51 @@ def build_stock_patterns() -> dict[str, list[str]]:
     return patterns
 
 
-# AI/Semi keywords that make content relevant even without specific stock mentions
-RELEVANCE_KEYWORDS = [
-    # Hardware/Chips
-    'gpu', 'gpus', 'chip', 'chips', 'semiconductor', 'semis', 'silicon',
-    'hbm', 'memory', 'dram', 'nand', 'cowos', 'packaging', 'foundry',
-    'asic', 'asics', 'fpga', 'accelerator', 'tpu', 'inference', 'training',
-    # AI/ML
+# TIERED KEYWORD SYSTEM
+# Ultra-specific terms: trigger on 1 match (rare, high-signal)
+# Common terms: require 2+ matches (noisy alone)
+
+ULTRA_SPECIFIC_KEYWORDS = [
+    # Hardware - rare/specific
+    'cowos', 'hbm', 'euv', 'lithography', 'foundry',
+    'asic', 'asics', 'fpga', 'tpu', 'trainium', 'inferentia',
+    'custom silicon', 'rubin', 'vera rubin', 'blackwell', 'hopper', 'grace',
+    'mi300', 'mi400', 'gaudi', 'exaflops', 'flops',
+    # Interconnect/Optics
+    'cpo', 'co-packaged optics', 'photonics', 'silicon photonics', 'interconnects',
+    # Power materials
+    'sic', 'silicon carbide', 'gan', 'gallium nitride',
+    # AI specific
+    'agentic', 'physical ai', 'embodied ai', 'multimodal',
+    # Supply chain specific
+    'lead time', 'backlog', 'behind the meter', 'baseload',
+    # Investment specific
+    'multi-bagger', 'picks and shovels', 'cagr',
+    # Sovereignty/geopolitics
+    'sovereignty', 'sovereign ai', 'sovereign cloud',
+]
+
+COMMON_KEYWORDS = [
+    # Hardware/Chips (need context)
+    'gpu', 'gpus', 'cpu', 'cpus', 'chip', 'chips', 'semiconductor', 'semis', 'silicon',
+    'memory', 'dram', 'nand', 'packaging', 'accelerator', 'hpc',
+    # AI/ML (need context)
     'ai ', ' ai', 'artificial intelligence', 'machine learning', 'llm', 'llms',
     'gpt', 'transformer', 'neural', 'deep learning', 'model', 'models',
-    'agentic', 'agent', 'agents', 'rag', 'fine-tun', 'embeddings',
-    # Supply/Demand
-    'supply', 'demand', 'shortage', 'glut', 'capacity', 'backlog', 'lead time',
+    'agent', 'agents', 'rag', 'fine-tun', 'embeddings', 'autonomy',
+    'inference', 'training', 'scaling', 'compute',
+    # Supply/Demand (need context)
+    'supply', 'demand', 'shortage', 'glut', 'capacity',
     'capex', 'spending', 'buildout', 'datacenter', 'data center', 'hyperscaler',
-    # Investment
-    'stock', 'stocks', 'invest', 'bull', 'bear', 'long', 'short', 'buy', 'sell',
-    'undervalued', 'overvalued', 'valuation', 'earnings', 'revenue', 'margin',
+    'optics', 'thermal', 'hpc workloads',
+    # Investment (need context)
+    'stock', 'stocks', 'invest', 'bull', 'bear', 'bullish', 'bearish',
+    'long', 'short', 'buy', 'sell',
+    'undervalued', 'overvalued', 'valuation', 'earnings', 'revenue', 'margin', 'eps',
     'interesting', 'opportunity', 'thesis', 'position', 'accumulate',
-    # Power/Infra
+    # Power/Infra (need context)
     'power', 'energy', 'nuclear', 'grid', 'cooling', 'electricity',
-    # Specific tech
-    'blackwell', 'hopper', 'grace', 'mi300', 'mi400', 'gaudi',
-    'inference', 'training', 'scaling', 'compute', 'flops',
+    'microgrid', 'grid optimization',
 ]
 
 
@@ -203,14 +226,31 @@ def extract_tickers_from_text(text: str, stock_patterns: dict[str, list[str]]) -
     return found
 
 
-def is_relevant_content(text: str) -> bool:
-    """Check if content is relevant to AI/semi investing even without ticker mentions."""
+def is_relevant_content(text: str) -> tuple[bool, list[str]]:
+    """
+    Check if content is relevant to AI/semi investing using tiered keyword system.
+
+    - Ultra-specific keywords: 1 match is enough (high signal, rare)
+    - Common keywords: require 2+ matches (noisy alone)
+
+    Returns: (is_relevant, matched_keywords)
+    """
     if not text:
-        return False
+        return False, []
 
     text_lower = text.lower()
-    matches = sum(1 for kw in RELEVANCE_KEYWORDS if kw in text_lower)
-    return matches >= 2  # Require at least 2 keyword matches
+
+    # Check ultra-specific keywords first (1 match = relevant)
+    ultra_matches = [kw for kw in ULTRA_SPECIFIC_KEYWORDS if kw in text_lower]
+    if ultra_matches:
+        return True, ultra_matches
+
+    # Check common keywords (need 2+ matches)
+    common_matches = [kw for kw in COMMON_KEYWORDS if kw in text_lower]
+    if len(common_matches) >= 2:
+        return True, common_matches
+
+    return False, []
 
 
 def classify_sentiment(text: str) -> str:
@@ -395,6 +435,8 @@ def scan_content_for_tickers(
 ) -> tuple[dict[str, list[dict]], list[dict]]:
     """
     Scan all content for stock mentions using comprehensive patterns.
+    Uses tiered keyword system for general relevance.
+
     Returns:
         - dict mapping ticker -> list of mentions
         - list of relevant content without specific ticker mentions
@@ -412,12 +454,15 @@ def scan_content_for_tickers(
                 mention['sentiment'] = classify_sentiment(text)
                 mention['matched_tickers'] = found_tickers
                 mentions_by_ticker[ticker].append(mention)
-        elif is_relevant_content(text):
-            # No specific ticker but relevant to AI/semis
-            item_copy = item.copy()
-            item_copy['sentiment'] = classify_sentiment(text)
-            item_copy['relevance'] = 'general_ai_semi'
-            relevant_general.append(item_copy)
+        else:
+            # Check for general AI/semi relevance using tiered keywords
+            is_relevant, matched_keywords = is_relevant_content(text)
+            if is_relevant:
+                item_copy = item.copy()
+                item_copy['sentiment'] = classify_sentiment(text)
+                item_copy['relevance'] = 'general_ai_semi'
+                item_copy['matched_keywords'] = matched_keywords
+                relevant_general.append(item_copy)
 
     return mentions_by_ticker, relevant_general
 
