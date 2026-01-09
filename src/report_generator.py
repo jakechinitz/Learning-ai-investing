@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 import random
+import re
 
 from src.fetchers import (
     find_active_stocks,
@@ -296,6 +297,54 @@ def generate_dynamic_questions(active_stocks: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def format_substack_summaries(days_back: int = 1) -> str:
+    """
+    Format recent Substack articles with summaries.
+    Shows actual content previews from published articles.
+    """
+    lines = ["## Recent Substacks\n"]
+
+    articles = fetch_all_substacks(days_back)
+
+    if not articles:
+        lines.append("*No new Substack articles in the past 24 hours.*\n")
+        return "\n".join(lines)
+
+    # Prioritize must-reads, then sort by date
+    must_reads = [a for a in articles if a.get('must_read')]
+    others = [a for a in articles if not a.get('must_read')]
+
+    all_articles = must_reads + others
+
+    for article in all_articles[:8]:  # Show up to 8 articles
+        source = article.get('source_name', 'Substack')
+        title = article.get('title', 'Untitled')
+        link = article.get('link', '')
+        summary = article.get('summary', '')
+        focus = article.get('focus', '')
+        is_must_read = article.get('must_read', False)
+
+        # Clean up summary - extract first meaningful paragraph
+        if summary:
+            # Remove HTML tags if any
+            summary = re.sub(r'<[^>]+>', '', summary)
+            summary = ' '.join(summary.split())[:400]
+
+        badge = "🔥 " if is_must_read else ""
+        lines.append(f"### {badge}{source}")
+        lines.append(f"**[{title}]({link})**")
+
+        if focus:
+            lines.append(f"*{focus}*")
+
+        if summary:
+            lines.append(f"\n> {summary}...")
+
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 def format_quick_movers(active_stocks: list[dict]) -> str:
     """Format price movers with their sentiment."""
     lines = ["## Price + Sentiment\n"]
@@ -335,7 +384,7 @@ def format_quick_movers(active_stocks: list[dict]) -> str:
 
 
 def generate_daily_report(
-    days_back: int = 2,
+    days_back: int = 1,  # 24 hours
     max_stocks: int = 15,
     output_path: Optional[Path] = None,
 ) -> str:
@@ -391,6 +440,10 @@ def generate_daily_report(
         report_lines.append("## Quiet Day\n")
         report_lines.append("*No significant Twitter activity on your watchlist stocks today.*\n")
         report_lines.append("---\n")
+
+    # Substack summaries - show what's been published
+    report_lines.append(format_substack_summaries(days_back))
+    report_lines.append("---\n")
 
     # Dynamic questions based on actual content
     report_lines.append(generate_dynamic_questions(active_stocks))

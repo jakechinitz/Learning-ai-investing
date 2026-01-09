@@ -4,11 +4,138 @@
 # Add or remove sources as you discover new ones
 
 twitter:
-  # Deep AI/Tech Analysis
+  # ===========================================
+  # KEY AI/SEMI ANALYSTS & STRATEGISTS
+  # ===========================================
+  - handle: "@dylan522p"
+    focus: "SemiAnalysis - semiconductor supply chains, AI chips"
+    why_follow: "Deep dives on CoWoS capacity, custom ASICs, 2026 demand"
+
+  - handle: "@FabricatedKnow"
+    focus: "AI hardware evolution, memory bottlenecks"
+    why_follow: "Contrarian on hype vs reality in semis"
+
+  - handle: "@GavinSBaker"
+    focus: "AI's long arc, inference economics"
+    why_follow: "Ex-ARGA; spots ecosystem winners, low-cost token edges"
+
+  - handle: "@StockSavvyShay"
+    focus: "Semi ecosystems, AI brains, connectivity"
+    why_follow: "Futurum Equities; maps NVDA/TSM/ASML for 2026 infra"
+
+  - handle: "@DivesTech"
+    focus: "Hyperscaler capex, AI evangelism"
+    why_follow: "Dan Ives Wedbush; $500B+ capex outlooks, PLTR/NVDA bull"
+
+  - handle: "@EricJhonsa"
+    focus: "Tech/semi trading, equipment plays"
+    why_follow: "The Information; long LRCX/MKSI for capex underestimates"
+
+  - handle: "@danielnewmanUV"
+    focus: "AI infrastructure, physical AI/robotics"
+    why_follow: "Futurum Group; NVDA's role in 2026 power shifts"
+
   - handle: "@chaaborsi"
     focus: "AI infrastructure, semiconductors"
     why_follow: "Deep technical analysis of AI compute trends"
 
+  - handle: "@SemiAnalysis"
+    focus: "Semiconductors, AI compute"
+    why_follow: "Industry-leading technical analysis"
+
+  # ===========================================
+  # AI-FOCUSED INVESTORS & TRADERS
+  # ===========================================
+  - handle: "@rev_cap"
+    focus: "Contrarian AI valuations, agentic AI"
+    why_follow: "Forward on emerging winners, undervalued mid-caps"
+
+  - handle: "@buccocapital"
+    focus: "Growth investing, AI adjacencies"
+    why_follow: "Thinks ahead on space/robotics (RKLB, ASTS)"
+
+  - handle: "@bucknsf"
+    focus: "Value-oriented, ROI scrutiny"
+    why_follow: "Predicts 2026 favors data-moat plays (MSFT/GOOG)"
+
+  - handle: "@dalibali2"
+    focus: "Tech investing, crypto-AI overlaps"
+    why_follow: "Forward on decentralized training, speculative plays"
+
+  - handle: "@thexcapitalist"
+    focus: "Selective contrarian, AMD China thesis"
+    why_follow: "Big on AMD AI chip potential, 15x 2028 earnings"
+
+  - handle: "@ericjackson"
+    focus: "AI skeptic-turned-bull"
+    why_follow: "EMJ Capital; defends NVDA/TSM, eyes 2026 enterprise"
+
+  - handle: "@LoneWolfWealth"
+    focus: "AI semi picks, ecosystem shifts"
+    why_follow: "NVDA/AVGO/LRCX; high-value chain positioning"
+
+  - handle: "@kautiousCo"
+    focus: "AI finance analytics, risk regimes"
+    why_follow: "Tracks semis (NVDA, MU, TSM) and xAI catalysts"
+
+  - handle: "@bdinvestingg"
+    focus: "Retail AI/fintech, infrastructure"
+    why_follow: "Accumulations in IREN/NBIS for power/compute ramps"
+
+  - handle: "@RealJGBanks"
+    focus: "Growth cycles, AI energy"
+    why_follow: "Bullish OKLO/VST; sees 3x in nuclear plays"
+
+  - handle: "@JonkooTrades"
+    focus: "Momentum, semis/networking"
+    why_follow: "Holdings in ALAB/CRDO for AI interconnect"
+
+  - handle: "@SmallCapSnipa"
+    focus: "Small caps, data centers"
+    why_follow: "High conviction IREN/WULF for hyperscaler deals"
+
+  - handle: "@wealthmatica"
+    focus: "Stock analysis, AI cloud"
+    why_follow: "Focus on NBIS/ALAB for massive ARR growth"
+
+  # ===========================================
+  # INDUSTRY PROS & DEVS (Insiders)
+  # ===========================================
+  - handle: "@swdevservice"
+    focus: "Industry dev, AI tools"
+    why_follow: "Forward on code hosting/AI (Gitlab thesis)"
+
+  - handle: "@bearforce_won"
+    focus: "Bearish contrarian with bull flips"
+    why_follow: "AI efficiency vs usage explosions in semis"
+
+  - handle: "@crosscheckc"
+    focus: "Tech verifier, supply realities"
+    why_follow: "Deep on 2026 bottlenecks like HBM shortages"
+
+  - handle: "@menhguin"
+    focus: "Industry insights, robotics/physical AI"
+    why_follow: "Forward on ISRG/SYM and semi ties"
+
+  - handle: "@ackmeni"
+    focus: "Dialectic thinker, agentic AI"
+    why_follow: "FinGenAi; forward on ROI-proof stocks"
+
+  - handle: "@CaesarCapitalz"
+    focus: "Generational wealth, space/AI"
+    why_follow: "Bets on RKLB/ASTS for sat networks"
+
+  - handle: "@StockChaser_"
+    focus: "Fundamentals/charts, Fib levels"
+    why_follow: "Watches AI semis for 2026 entries"
+
+  - handle: "@moneyqubit"
+    focus: "Data-backed, quantum/AI"
+    why_follow: "Insights on IONQ/RGTI despite short-term bears"
+
+  # ===========================================
+  # ORIGINAL ACCOUNTS (Quality/Fundamentals)
+  # ===========================================
   - handle: "@borrowed_ideas"
     focus: "Quality compounders, tech fundamentals"
     why_follow: "Long-form threads on business models"
@@ -33,10 +160,6 @@ twitter:
     focus: "AI adoption curves"
     why_follow: "Enterprise AI trends"
 
-  - handle: "@SemiAnalysis"
-    focus: "Semiconductors, AI compute"
-    why_follow: "Industry-leading technical analysis"
-
   - handle: "@EricNewcomer"
     focus: "AI startups, venture capital"
     why_follow: "Breaking AI industry news"
@@ -46,13 +169,47 @@ twitter:
     why_follow: "Builder perspective on AI"
 
 substacks:
+  # ===========================================
+  # CORE MUST-READS (Semis/AI Hardware)
+  # ===========================================
   - name: "SemiAnalysis"
     url: "https://semianalysis.com"
-    rss: "https://semianalysis.com/feed"
-    focus: "Deep semiconductor and AI infrastructure analysis"
+    rss: "https://semianalysis.substack.com/feed"
+    focus: "Semiconductor supply chains, AI chip forecasts, custom ASICs"
     frequency: "2-3x/week"
     must_read: true
 
+  - name: "Fabricated Knowledge"
+    url: "https://fabricatedknowledge.com"
+    rss: "https://fabricatedknowledge.substack.com/feed"
+    focus: "AI hardware evolution, memory bottlenecks, contrarian semi takes"
+    frequency: "1-2x/week"
+    must_read: true
+
+  - name: "Dwarkesh Podcast"
+    url: "https://dwarkesh.substack.com"
+    rss: "https://dwarkesh.substack.com/feed"
+    focus: "AI leader interviews, AGI timelines, breakthroughs"
+    frequency: "weekly"
+    must_read: true
+
+  - name: "More Than Moore"
+    url: "https://morethanmoore.substack.com"
+    rss: "https://morethanmoore.substack.com/feed"
+    focus: "Semiconductors, AI processors, market trends"
+    frequency: "weekly"
+    must_read: true
+
+  - name: "The Chip Letter"
+    url: "https://thechipletter.substack.com"
+    rss: "https://thechipletter.substack.com/feed"
+    focus: "Computer history, chip architecture, AI hardware context"
+    frequency: "weekly"
+    must_read: true
+
+  # ===========================================
+  # AI/TECH STRATEGY
+  # ===========================================
   - name: "Stratechery"
     url: "https://stratechery.com"
     rss: "https://stratechery.com/feed/"
@@ -60,22 +217,94 @@ substacks:
     frequency: "3-4x/week"
     must_read: true
 
+  - name: "Exponential View"
+    url: "https://exponentialview.substack.com"
+    rss: "https://exponentialview.substack.com/feed"
+    focus: "AI infrastructure, policy, exponential growth trends"
+    frequency: "weekly"
+    must_read: true
+
+  - name: "Interconnects"
+    url: "https://interconnects.substack.com"
+    rss: "https://interconnects.substack.com/feed"
+    focus: "Cutting-edge AI from frontier labs, model training, hardware"
+    frequency: "weekly"
+    must_read: true
+
   - name: "Not Boring"
     url: "https://notboring.co"
-    rss: "https://notboring.co/feed"
+    rss: "https://www.notboring.co/feed"
     focus: "Tech trends, company deep dives"
     frequency: "1-2x/week"
-    must_read: true
 
   - name: "The Generalist"
     url: "https://generalist.com"
-    rss: "https://generalist.com/feed"
+    rss: "https://www.readthegeneralist.com/feed"
     focus: "Company deep dives, tech trends"
+    frequency: "weekly"
+
+  # ===========================================
+  # INVESTMENT-FOCUSED
+  # ===========================================
+  - name: "Chipstrat"
+    url: "https://chipstrat.substack.com"
+    rss: "https://chipstrat.substack.com/feed"
+    focus: "Semiconductors, AI, business strategy intersection"
+    frequency: "weekly"
+    must_read: true
+
+  - name: "The Pragmatic Optimist"
+    url: "https://thepragmaticoptimist.substack.com"
+    rss: "https://thepragmaticoptimist.substack.com/feed"
+    focus: "AI investment research, chip wars, memory markets"
+    frequency: "weekly"
+    must_read: true
+
+  - name: "Vik's Newsletter"
+    url: "https://viksnewsletter.substack.com"
+    rss: "https://viksnewsletter.substack.com/feed"
+    focus: "Semiconductors from business perspective, investment ideas"
+    frequency: "weekly"
+
+  - name: "AI Supremacy"
+    url: "https://aisupremacy.substack.com"
+    rss: "https://aisupremacy.substack.com/feed"
+    focus: "AI investment, semi plays, forward outlooks"
+    frequency: "weekly"
+
+  - name: "SemiVision"
+    url: "https://semivision.substack.com"
+    rss: "https://semivision.substack.com/feed"
+    focus: "Semiconductor ecosystem research, AI hardware supply"
+    frequency: "weekly"
+
+  # ===========================================
+  # CRITICAL/BALANCED PERSPECTIVES
+  # ===========================================
+  - name: "Marcus on AI"
+    url: "https://garymarcus.substack.com"
+    rss: "https://garymarcus.substack.com/feed"
+    focus: "Critical AI analysis, LLM limitations, hype vs reality"
+    frequency: "2-3x/week"
+
+  - name: "Bismarck Brief"
+    url: "https://brief.bismarckanalysis.com"
+    rss: "https://brief.bismarckanalysis.com/feed"
+    focus: "Intelligence-grade analysis, AI 2026 trends, global players"
+    frequency: "weekly"
+
+  # ===========================================
+  # INFRASTRUCTURE & ADJACENT
+  # ===========================================
+  - name: "Construction Physics"
+    url: "https://constructionphysics.substack.com"
+    rss: "https://constructionphysics.substack.com/feed"
+    focus: "Tech infrastructure, AI data centers, practical engineering"
     frequency: "weekly"
 
   - name: "Newcomer"
     url: "https://newcomer.co"
-    rss: "https://newcomer.co/feed"
+    rss: "https://www.newcomer.co/feed"
     focus: "VC, AI startups, Silicon Valley"
     frequency: "2-3x/week"
 
@@ -83,19 +312,6 @@ substacks:
     url: "https://tanay.substack.com"
     rss: "https://tanay.substack.com/feed"
     focus: "AI companies, software analysis"
-    frequency: "weekly"
-
-  - name: "Fabricated Knowledge"
-    url: "https://fabricatedknowledge.com"
-    rss: "https://fabricatedknowledge.com/feed"
-    focus: "Semiconductors deep dives"
-    frequency: "1-2x/week"
-    must_read: true
-
-  - name: "The Chip Letter"
-    url: "https://thechipletter.substack.com"
-    rss: "https://thechipletter.substack.com/feed"
-    focus: "Chip industry history and analysis"
     frequency: "weekly"
 
 podcasts:

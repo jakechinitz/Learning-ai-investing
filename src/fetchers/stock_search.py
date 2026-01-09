@@ -188,7 +188,7 @@ def fetch_substack_feed(substack: dict) -> list[dict]:
         return []
 
 
-def fetch_all_twitter_content(days_back: int = 2) -> list[dict]:
+def fetch_all_twitter_content(days_back: int = 1) -> list[dict]:
     """
     Fetch all Twitter content from configured accounts in PARALLEL.
     Returns all tweets, ready to be scanned for tickers.
@@ -332,7 +332,7 @@ def get_stock_prices_batch(tickers: list[str]) -> dict[str, dict]:
 
 
 def find_active_stocks(
-    days_back: int = 2,
+    days_back: int = 1,  # 24 hours by default
     min_mentions: int = 1,
     max_stocks: int = 20,
     include_prices: bool = True,
