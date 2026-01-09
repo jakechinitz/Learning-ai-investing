@@ -10,7 +10,7 @@ from typing import Optional
 import json
 import random
 
-from fetchers import (
+from src.fetchers import (
     fetch_all_substacks,
     fetch_all_podcasts,
     fetch_all_twitter,
